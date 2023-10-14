@@ -13,7 +13,7 @@ typedef struct token_t
 {
     token_type_t type;
     char* data;
-} token_t;
+}token_t;
 
 typedef enum state_t{
     INIT,
@@ -28,8 +28,12 @@ typedef struct scanner_t{
     state_t state;
 }scanner_t;
 
+typedef enum error_t{
+    SUCCESS = 0,
+    LEXICAL_ERROR = 1
+}error_t;
 
-token_t* get_token(scanner_t* scanner);
+error_t get_token(scanner_t* scanner,token_t** token);
 
 token_t* init_token(token_type_t type, char* data, size_t data_len);
 
@@ -37,5 +41,10 @@ void destroy_token(token_t* token);
 
 scanner_t* init_scanner(FILE* f_input);
 
+char get_char(scanner_t* scanner);
 
+int is_white(next_char);
 
+int is_letter(next_char);
+
+int is_digit(next_char);
