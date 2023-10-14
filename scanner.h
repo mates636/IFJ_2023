@@ -5,7 +5,10 @@
 typedef enum token_type_t{
     UNKNOWN,
     VARNAME,
-    SEMICOLON
+    SEMICOLON,
+    LEFT_PAR,
+    STRING,
+    EOF_TYPE
 }token_type_t;
 
 
@@ -16,9 +19,11 @@ typedef struct token_t
 }token_t;
 
 typedef enum state_t{
-    INIT,
-    IDENTIFIER,
-    EQUAL
+    S_INIT,
+    S_IDENTIFIER,
+    S_EQUAL,
+    S_LEFT_PAR,
+    S_STRING
 }state_t;
 
 typedef struct scanner_t{
@@ -35,16 +40,18 @@ typedef enum error_t{
 
 error_t get_token(scanner_t* scanner,token_t** token);
 
-token_t* init_token(token_type_t type, char* data, size_t data_len);
+token_t* init_token_data(token_type_t type, char* data, size_t data_len);
+token_t* init_token(token_type_t type);
 
 void destroy_token(token_t* token);
+//void destroy_scanner()
 
 scanner_t* init_scanner(FILE* f_input);
 
 char get_char(scanner_t* scanner);
 
-int is_white(next_char);
+int is_white(char next_char);
 
-int is_letter(next_char);
+int is_letter(char next_char);
 
-int is_digit(next_char);
+int is_digit(char next_char);
