@@ -6,13 +6,14 @@ scanner_t* init_scanner(FILE* f_input){
     scanner->f_input = f_input;
     scanner->buffer_pos = 0;
     scanner->state = S_INIT;
+    scanner->rewind = '\0';
     return scanner;
 }
 
 error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
         char next_char;
-        // printf("state: %d \n", scanner->state);
+        printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
                 next_char = get_char(scanner);
@@ -23,38 +24,49 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 }
                 if(is_white(next_char)){
                     scanner->state = S_INIT;
-                
                 } else if(is_letter(next_char)){
-                    scanner->buffer[scanner->buffer_pos] = next_char;
-                    scanner->buffer_pos += 1;
+                    add_char(next_char, scanner);
                 } else if(is_digit(next_char)){
-                    scanner->buffer[scanner->buffer_pos] = next_char;
-                    scanner->buffer_pos = +1;
+                    add_char(next_char, scanner);
+                    scanner->state = S_INT;
                 } else if(next_char == '('){
-                    scanner->state = S_LEFT_PAR;
+                    *token =  init_token(LEFT_PAR);
+                    return SUCCESS;
+                } else if(next_char == ')'){
+                    *token =  init_token(RIGHT_PAR);
+                    return SUCCESS;
                 } else if(next_char == '\"'){
                     scanner->state = S_STRING;
                 } else {
                     return LEXICAL_ERROR;
                 }
             break;
-            case S_LEFT_PAR:
-                scanner->state = S_INIT;
-                *token =  init_token(LEFT_PAR);
-                return SUCCESS;
-            
-            break;
             case S_STRING:
                 next_char = get_char(scanner);
                 if(next_char == '\0'){
                     return LEXICAL_ERROR;
+                } else if(next_char == '\n'){
+                    return LEXICAL_ERROR;
                 }
                 else if(next_char != '\"'){
-                    scanner->buffer[scanner->buffer_pos++] = next_char;
+                    add_char(next_char, scanner);
                 } else {
                     scanner->state = S_INIT;
                     *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
                     scanner->buffer_pos = 0;
+                    return SUCCESS;
+                }
+            break;
+            case S_INT:
+                next_char = get_char(scanner);
+                
+                if(is_digit(next_char)){
+                    add_char(next_char, scanner);
+                } else {
+                    scanner->state = S_INIT;
+                    *token = init_token_data(INT, scanner->buffer, scanner->buffer_pos);
+                    scanner->buffer_pos = 0;
+                    scanner->rewind = next_char;
                     return SUCCESS;
                 }
             break;
@@ -89,6 +101,11 @@ void destroy_token(token_t* token){
 
 char get_char(scanner_t* scanner){
     char c;
+    if(scanner->rewind != '\0'){
+        char rew = scanner->rewind;
+        scanner->rewind = '\0';
+        return rew;
+    }
     int n = fscanf(scanner->f_input, "%c", &c);
     if(n <= 0){
         return '\0';
@@ -119,4 +136,9 @@ int is_digit(char next_char){
     } else {
         return 0;
     }
+}
+
+void add_char(char c, scanner_t* scanner){
+    scanner->buffer[scanner->buffer_pos] = c;
+    scanner->buffer_pos += 1;
 }

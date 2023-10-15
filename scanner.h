@@ -7,8 +7,10 @@ typedef enum token_type_t{
     VARNAME,
     SEMICOLON,
     LEFT_PAR,
+    RIGHT_PAR,
     STRING,
-    EOF_TYPE
+    EOF_TYPE,
+    INT
 }token_type_t;
 
 
@@ -23,7 +25,9 @@ typedef enum state_t{
     S_IDENTIFIER,
     S_EQUAL,
     S_LEFT_PAR,
-    S_STRING
+    S_RIGHT_PAR,
+    S_STRING,
+    S_INT
 }state_t;
 
 typedef struct scanner_t{
@@ -31,6 +35,7 @@ typedef struct scanner_t{
     char buffer[10000];
     size_t buffer_pos;
     state_t state;
+    char rewind;
 }scanner_t;
 
 typedef enum error_t{
@@ -55,3 +60,5 @@ int is_white(char next_char);
 int is_letter(char next_char);
 
 int is_digit(char next_char);
+
+void add_char(char c, scanner_t* scanner);
