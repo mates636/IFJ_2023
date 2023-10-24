@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef enum token_type_t{
     UNKNOWN,
@@ -10,7 +11,8 @@ typedef enum token_type_t{
     RIGHT_PAR,
     STRING,
     EOF_TYPE,
-    INT
+    INT,
+    KEYWORD
 }token_type_t;
 
 
@@ -27,7 +29,10 @@ typedef enum state_t{
     S_LEFT_PAR,
     S_RIGHT_PAR,
     S_STRING,
-    S_INT
+    S_INT,
+
+    //intermediate states
+    S_IDENTIFIERORKEYWORD
 }state_t;
 
 typedef struct scanner_t{
@@ -44,6 +49,26 @@ typedef enum error_t{
 }error_t;
 
 error_t get_token(scanner_t* scanner,token_t** token);
+
+token_t* init_token_data(token_type_t type, char* data, size_t data_len);
+token_t* init_token(token_type_t type);
+
+void destroy_token(token_t* token);
+//void destroy_scanner()
+
+scanner_t* init_scanner(FILE* f_input);
+
+char get_char(scanner_t* scanner);
+
+int is_white(char next_char);
+
+int is_letter(char next_char);
+
+int is_digit(char next_char);
+
+bool is_keyword(scanner_t* scanner);
+
+void add_char(char c, scanner_t* scanner);
 
 token_t* init_token_data(token_type_t type, char* data, size_t data_len);
 token_t* init_token(token_type_t type);
