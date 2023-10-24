@@ -73,6 +73,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
 
         }
     }
+    //ahoj
 
     return SUCCESS; 
 }
