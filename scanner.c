@@ -26,6 +26,10 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     scanner->state = S_INIT;
                 } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
+                    scanner->state = S_IDENTIFIERORKEYWORD;
+                }else if(next_char == '_'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_IDENTIFIERORKEYWORD;
                 } else if(is_digit(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_INT;
@@ -68,6 +72,36 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     scanner->buffer_pos = 0;
                     scanner->rewind = next_char;
                     return SUCCESS;
+                }
+            break;
+            case S_IDENTIFIERORKEYWORD:
+                next_char = get_char(scanner);
+
+                if(is_digit(next_char) || next_char == '_'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_IDENTIFIER;
+                }
+                else if(is_letter(next_char)){
+                    add_char(next_char, scanner);
+                    scanner->state = S_IDENTIFIERORKEYWORD;
+                }
+                else{
+                    if(strcmp(scanner->buffer, "_") == 0){
+                        return LEXICAL_ERROR;
+                    }
+                    if(is_keyword(scanner)){
+                        scanner->state = S_INIT;
+                        *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
+                        scanner->rewind = next_char;
+                        scanner->buffer_pos = 0;
+                        return SUCCESS;
+                    }else{
+                        scanner->state = S_INIT;
+                        *token = init_token_data(VARNAME, scanner->buffer, scanner->buffer_pos);
+                        scanner->rewind = next_char;
+                        scanner->buffer_pos = 0;
+                        return SUCCESS;
+                    }
                 }
             break;
 
@@ -136,6 +170,21 @@ int is_digit(char next_char){
     } else {
         return 0;
     }
+}
+
+bool is_keyword(scanner_t* scanner){
+    char *keywords[] = {
+        "Double", "else", "func", "if", "Int", "let", "nil", "return", "String", "var", "while"
+    };
+
+    int keywords_number = sizeof(keywords) / sizeof(keywords[0]);
+
+    for(int i = 0; i < keywords_number; i++){
+        if(strcmp(scanner->buffer, keywords[i]) == 0){
+            return true;
+        }
+    }
+    return false;
 }
 
 void add_char(char c, scanner_t* scanner){
