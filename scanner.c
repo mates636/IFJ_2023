@@ -13,7 +13,7 @@ scanner_t* init_scanner(FILE* f_input){
 error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
         char next_char;
-        printf("state: %d \n", scanner->state);
+        // printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
                 next_char = get_char(scanner);
@@ -110,7 +110,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
 
     return SUCCESS; 
 }
-
+//token without data
 token_t* init_token(token_type_t type){
     token_t* token = (token_t*)malloc(sizeof(token_t));
     token->type = type;
@@ -118,7 +118,7 @@ token_t* init_token(token_type_t type){
     return token;
 }
 
-
+//token with data
 token_t* init_token_data(token_type_t type, char* data, size_t data_len){
     token_t* token = (token_t*)malloc(sizeof(token_t));
     token->type = type;
