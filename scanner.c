@@ -31,20 +31,19 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     *token = init_token(RIGHT_BR);
                     return SUCCESS;
                 } else if(next_char == '='){
-                    *token = init_token(EQUALS);
-                    return SUCCESS;
-                // } else if(next_char == '=='){
-                //     *token = init_token(ASSIGMENT);
-                //     return SUCCESS;
+                    add_char(next_char, scanner);
+                    scanner->state = S_EQUALS;
+                    // *token = init_token(EQUALS);
+                    // return SUCCESS;
                 } else if(next_char == ','){
                     *token = init_token(COMMA);
                     return SUCCESS;
                 } else if(next_char == '+'){
                     *token = init_token(PLUS);
                     return SUCCESS;
-                } else if(next_char == '-'){
-                    *token = init_token(MINUS);
-                    return SUCCESS;
+                // } else if(next_char == '-'){
+                //     *token = init_token(MINUS);
+                //     return SUCCESS;
                 } else if(next_char == '/'){
                     *token = init_token(DIVIDE);
                     return SUCCESS;
@@ -64,6 +63,9 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(next_char == '>'){
                     add_char(next_char, scanner);
                     scanner->state = S_MORE;
+                } else if(next_char == '-'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_RETURN_TYPE;
                 } else if(next_char == '{'){
                     *token = init_token(LEFT_BR);
                     return SUCCESS;
@@ -146,6 +148,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     add_char(next_char, scanner);
                     scanner->state = S_DOUBLE;
                 }else{
+                    // return LEXICAL_ERROR;
                     scanner->state = S_INIT;
                     *token = init_token_data(DOUBLE, scanner->buffer, scanner->buffer_pos);
                     scanner->buffer_pos = 0;
@@ -227,7 +230,36 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     return SUCCESS;
                 }
             break;
-
+            case S_EQUALS:
+                next_char = get_char(scanner);
+                if(next_char == '='){
+                    scanner->state = S_INIT;
+                    *token = init_token(ASSIGMENT);
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                } else {
+                    scanner->state = S_INIT;
+                    *token = init_token(EQUALS);
+                    scanner->rewind = next_char;
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                }
+            break;
+            case S_RETURN_TYPE:
+            next_char = get_char(scanner);
+            printf("sdfs");
+            if(next_char == '>'){
+                scanner->state = S_INIT;
+                *token = init_token(RETURN_TYPE);
+                scanner->buffer_pos = 0;
+                return SUCCESS;
+            } else{
+                scanner->state = S_INIT;
+                *token = init_token(MINUS);
+                scanner->buffer_pos = 0;
+                return SUCCESS;
+            }
+            break;
 
         }
     }
