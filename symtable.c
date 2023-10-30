@@ -109,6 +109,6 @@ bst_node *scope_stack_top(scope_stack *stack){
     return stack->stack_array[stack->top];
 }
 
-void stack_dispose(scope_stack *stack){
-    free(stack);
+void stack_dispose(scope_stack **stack){
+    free(*stack);
 }

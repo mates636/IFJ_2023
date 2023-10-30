@@ -13,7 +13,7 @@ typedef enum node_data_type {
 
 typedef struct bst_node {
   char *key;              
-  void *data;
+  char *data;
   bst_node_data_type node_data_type;            
   struct bst_node *left_child;  
   struct bst_node *right_child; 
@@ -38,4 +38,4 @@ scope_stack *scope_stack_init();
 void scope_stack_push(scope_stack *stack);
 void scope_stack_pop(scope_stack *stack);
 bst_node *scope_stack_top(scope_stack *stack);
-void stack_dispose(scope_stack *stack);
+void stack_dispose(scope_stack **stack);
