@@ -13,11 +13,11 @@ scanner_t* init_scanner(FILE* f_input){
 error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
         char next_char;
-        // printf("state: %d \n", scanner->state);
+        printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
                 next_char = get_char(scanner);
-                // printf("init got char %c\n", next_char);
+                printf("init got char %c\n", next_char);
                 if(next_char == '\0'){
                     *token = init_token(EOF_TYPE);
                     return SUCCESS;
@@ -27,7 +27,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
-                }else if(next_char == '_'){
+                } else if(next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
                 } else if(is_digit(next_char)){
@@ -61,17 +61,63 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     return SUCCESS;
                 }
             break;
+            //pripad pro cisla
             case S_INT:
                 next_char = get_char(scanner);
-                
                 if(is_digit(next_char)){
                     add_char(next_char, scanner);
+                } else if(next_char == '.'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_DOUBLE_POINT;
+                } else if(next_char == 'E' || next_char == 'e'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_EXPONENT;
                 } else {
+                    // return LEXICAL_ERROR;
                     scanner->state = S_INIT;
                     *token = init_token_data(INT, scanner->buffer, scanner->buffer_pos);
                     scanner->buffer_pos = 0;
                     scanner->rewind = next_char;
                     return SUCCESS;
+                }
+            break;
+            case S_DOUBLE_POINT:
+                next_char = get_char(scanner);
+                if(is_digit(next_char)){
+                    // add_char(next_char, scanner);
+                    scanner->rewind = next_char;
+                    scanner->state = S_DOUBLE;
+                }else{
+                    return LEXICAL_ERROR;
+                    // scanner->state = S_INIT;
+                    // *token = init_token_data(DOUBLE, scanner->buffer, scanner->buffer_pos);
+                    // scanner->buffer_pos = 0;
+                    // scanner->rewind = next_char;
+                    // return SUCCESS;
+                }
+            break;
+            case S_DOUBLE:
+                next_char = get_char(scanner);
+                if(is_digit(next_char)){
+                    add_char(next_char, scanner);
+                    scanner->state = S_DOUBLE;
+                }else{
+                    scanner->state = S_INIT;
+                    *token = init_token_data(DOUBLE, scanner->buffer, scanner->buffer_pos);
+                    scanner->buffer_pos = 0;
+                    scanner->rewind = next_char;
+                    return SUCCESS;
+                }
+            break;
+            case S_EXPONENT:
+                next_char = get_char(scanner);
+                if(is_digit(next_char)){
+                    
+                    add_char(next_char, scanner);
+                    scanner->state = S_INT;
+                }else if(next_char == '+' || '-'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_INT;
                 }
             break;
             case S_IDENTIFIERORKEYWORD:
@@ -80,12 +126,10 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIER;
-                }
-                else if(is_letter(next_char)){
+                } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
-                }
-                else{
+                } else{
                     if(strcmp(scanner->buffer, "_") == 0){
                         return LEXICAL_ERROR;
                     }
@@ -95,7 +139,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         scanner->rewind = next_char;
                         scanner->buffer_pos = 0;
                         return SUCCESS;
-                    }else{
+                    } else{
                         scanner->state = S_INIT;
                         *token = init_token_data(VARNAME, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;

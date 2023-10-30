@@ -12,7 +12,8 @@ typedef enum token_type_t{
     STRING,
     EOF_TYPE,
     INT,
-    KEYWORD
+    KEYWORD,
+    DOUBLE
 }token_type_t;
 
 
@@ -30,6 +31,9 @@ typedef enum state_t{
     S_RIGHT_PAR,
     S_STRING,
     S_INT,
+    S_DOUBLE_POINT,
+    S_DOUBLE,
+    S_EXPONENT,
 
     //intermediate states
     S_IDENTIFIERORKEYWORD
