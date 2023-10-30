@@ -141,7 +141,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         return SUCCESS;
                     } else{
                         scanner->state = S_INIT;
-                        *token = init_token_data(VARNAME, scanner->buffer, scanner->buffer_pos);
+                        *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
                         scanner->buffer_pos = 0;
                         return SUCCESS;
