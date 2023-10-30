@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "error_code.h"
+
 typedef enum token_type_t{
     UNKNOWN,
     VARNAME,
@@ -42,11 +44,6 @@ typedef struct scanner_t{
     state_t state;
     char rewind;
 }scanner_t;
-
-typedef enum error_t{
-    SUCCESS = 0,
-    LEXICAL_ERROR = 1
-}error_t;
 
 error_t get_token(scanner_t* scanner,token_t** token);
 
