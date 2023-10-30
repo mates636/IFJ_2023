@@ -7,7 +7,7 @@
 
 typedef enum token_type_t{
     UNKNOWN,
-    VARNAME,
+    IDENTIFIER,
     SEMICOLON,
     LEFT_PAR,
     RIGHT_PAR,
