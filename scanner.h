@@ -51,6 +51,8 @@ typedef enum state_t{
     S_DOUBLE_POINT,
     S_DOUBLE,
     S_EXPONENT,
+    S_LESS,
+    S_MORE,
 
     //intermediate states
     S_IDENTIFIERORKEYWORD

@@ -24,6 +24,55 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 }
                 if(is_white(next_char)){
                     scanner->state = S_INIT;
+                } else if(next_char == '{'){
+                    *token = init_token(LEFT_BR);
+                    return SUCCESS;
+                } else if(next_char == '}'){
+                    *token = init_token(RIGHT_BR);
+                    return SUCCESS;
+                } else if(next_char == '='){
+                    *token = init_token(EQUALS);
+                    return SUCCESS;
+                // } else if(next_char == '=='){
+                //     *token = init_token(ASSIGMENT);
+                //     return SUCCESS;
+                } else if(next_char == ','){
+                    *token = init_token(COMMA);
+                    return SUCCESS;
+                } else if(next_char == '+'){
+                    *token = init_token(PLUS);
+                    return SUCCESS;
+                } else if(next_char == '-'){
+                    *token = init_token(MINUS);
+                    return SUCCESS;
+                } else if(next_char == '/'){
+                    *token = init_token(DIVIDE);
+                    return SUCCESS;
+                } else if(next_char == '*'){
+                    *token = init_token(MULTIPLY);
+                    return SUCCESS;
+                } else if(next_char == '('){
+                    *token =  init_token(LEFT_PAR);
+                    return SUCCESS;
+                } else if(next_char == ')'){
+                    *token =  init_token(RIGHT_PAR);
+                    return SUCCESS;
+                    /////
+                } else if(next_char == '<'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_LESS;
+                } else if(next_char == '>'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_MORE;
+                } else if(next_char == '{'){
+                    *token = init_token(LEFT_BR);
+                    return SUCCESS;
+                } else if(next_char == '{'){
+                    *token = init_token(LEFT_BR);
+                    return SUCCESS;
+                } else if(next_char == '{'){
+                    *token = init_token(LEFT_BR);
+                    return SUCCESS;
                 } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
@@ -33,12 +82,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(is_digit(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_INT;
-                } else if(next_char == '('){
-                    *token =  init_token(LEFT_PAR);
-                    return SUCCESS;
-                } else if(next_char == ')'){
-                    *token =  init_token(RIGHT_PAR);
-                    return SUCCESS;
+                
                 } else if(next_char == '\"'){
                     scanner->state = S_STRING;
                 } else {
@@ -148,6 +192,42 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     }
                 }
             break;
+            case S_LESS:
+                next_char = get_char(scanner);
+                if(next_char == '>'){
+                    scanner->state = S_INIT;
+                    *token = init_token(NOT_EQUALS);
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                } else if(next_char == '='){
+                    scanner->state = S_INIT;
+                    *token = init_token(LESS_EQUALS);
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                } else {
+                    scanner->state = S_INIT;
+                    *token = init_token(LESS);
+                    scanner->rewind = next_char;
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                }
+            break;
+            case S_MORE:
+                next_char = get_char(scanner);
+                if(next_char == '='){
+                    scanner->state = S_INIT;
+                    *token = init_token(MORE_EQUALS);
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                } else {
+                    scanner->state = S_INIT;
+                    *token = init_token(MORE);
+                    scanner->rewind = next_char;
+                    scanner->buffer_pos = 0;
+                    return SUCCESS;
+                }
+            break;
+
 
         }
     }
