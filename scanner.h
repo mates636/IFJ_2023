@@ -15,7 +15,22 @@ typedef enum token_type_t{
     EOF_TYPE,
     INT,
     KEYWORD,
-    DOUBLE
+    DOUBLE,
+    COLON,
+    RIGHT_BR,
+    LEFT_BR,
+    EQUALS,
+    ASSIGMENT,
+    COMMA,
+    PLUS,
+    MINUS,
+    DIVIDE,
+    MULTIPLY,
+    LESS,
+    NOT_EQUALS,
+    LESS_EQUALS,
+    MORE,
+    MORE_EQUALS
 }token_type_t;
 
 
