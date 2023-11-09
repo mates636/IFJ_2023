@@ -5,6 +5,9 @@
 
 #include "error_code.h"
 
+#ifndef SCANNER_H
+#define SCANNER_H
+
 typedef enum token_type_t{
     UNKNOWN,
     IDENTIFIER,
@@ -103,3 +106,5 @@ int is_letter(char next_char);
 int is_digit(char next_char);
 
 void add_char(char c, scanner_t* scanner);
+
+#endif 

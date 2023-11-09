@@ -1,4 +1,8 @@
 #include "symtable.h"
+
+#ifndef SYMTABLE_C
+#define SYMTABLE_C
+
 //BST functions
 void bst_init(bst_node **tree){
     (*tree) = NULL;
@@ -17,14 +21,15 @@ bst_node *bst_search(bst_node *tree, char *key){
     return NULL;
 }
 
-void bst_insert(bst_node **tree, char *key, char *data){
+void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
     bst_node *parent_node = NULL;
     bst_node *tmp = (*tree);
 
     if((*tree) == NULL){
         bst_node *new_node = (bst_node*)malloc(sizeof(struct bst_node));
         new_node->key = key;
-        new_node->data = data;
+        new_node->data = NULL;
+        new_node->node_data_type = data_type;
         new_node->left_child = NULL;
         new_node->right_child = NULL;
         (*tree) = new_node;
@@ -39,7 +44,8 @@ void bst_insert(bst_node **tree, char *key, char *data){
         if(tmp == NULL){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
-            new_node->data = data;
+            new_node->data = NULL;
+            new_node->node_data_type = data_type;
             new_node->left_child = NULL;
             new_node->right_child = NULL;
             parent_node->left_child = new_node;
@@ -50,14 +56,14 @@ void bst_insert(bst_node **tree, char *key, char *data){
         if(tmp == NULL){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
-            new_node->data = data;
+            new_node->data = NULL;
+            new_node->node_data_type = data_type;
             new_node->left_child= NULL;
             new_node->right_child = NULL;
             parent_node->right_child = new_node;
             return;
         }
         }else{
-            tmp->data = data;
             return;
         }
   }
@@ -67,6 +73,10 @@ void bst_dispose(bst_node **tree){
     if((*tree) == NULL){
         return;
     }else{
+        if ((*tree)->data != NULL) {
+            free(((sym_t_variable *)(*tree)->data)->data);
+            free((*tree)->data);
+        }
         bst_dispose(&(*tree)->left_child);
         bst_dispose(&(*tree)->right_child);
         free(*tree);
@@ -105,10 +115,46 @@ void scope_stack_pop(scope_stack *stack){
     stack->top = stack->top - 1;
 }
 
-bst_node *scope_stack_top(scope_stack *stack){
+bst_node *current_scope(scope_stack *stack){
     return stack->stack_array[stack->top];
 }
 
 void stack_dispose(scope_stack **stack){
     free(*stack);
 }
+
+
+
+
+//symtable inserting values of variables
+void insert_variable_data(bst_node **tree, char *data){
+    int len = strlen(data);
+    char *d = (char*)malloc((len + 1) * sizeof(char));
+    strcpy(d, data);
+
+    sym_t_variable *variable = (sym_t_variable*)malloc(sizeof(struct sym_t_variable));
+    variable->data = d;
+    
+    (*tree)->data = (sym_t_variable *)variable;
+}
+
+void insert_variable_type(bst_node **tree, char *data){
+    if(strcmp(data, "Double") == 0){
+        (*tree)->variable_type = Double;
+    }else if(strcmp(data, "Int") == 0){
+        (*tree)->variable_type = Int;
+    }else if(strcmp(data, "String") == 0){
+        (*tree)->variable_type = String;
+    }else if(strcmp(data, "String?") == 0){
+        (*tree)->variable_type = String_nil;
+        insert_variable_data(&(*tree), "nil");
+    }else if(strcmp(data, "Int?") == 0){
+        (*tree)->variable_type = Int_nil;
+        insert_variable_data(&(*tree), "nil");
+    }else if(strcmp(data, "Double?") == 0){
+        (*tree)->variable_type = Double_nil;
+        insert_variable_data(&(*tree), "nil"); 
+    }    
+}
+
+#endif
