@@ -29,6 +29,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
         bst_node *new_node = (bst_node*)malloc(sizeof(struct bst_node));
         new_node->key = key;
         new_node->data = NULL;
+        new_node->variable_type = NULL;
         new_node->node_data_type = data_type;
         new_node->left_child = NULL;
         new_node->right_child = NULL;
@@ -45,6 +46,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
             new_node->data = NULL;
+            new_node->variable_type = NULL;
             new_node->node_data_type = data_type;
             new_node->left_child = NULL;
             new_node->right_child = NULL;
@@ -57,6 +59,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
             new_node->data = NULL;
+            new_node->variable_type = NULL;
             new_node->node_data_type = data_type;
             new_node->left_child= NULL;
             new_node->right_child = NULL;
@@ -127,7 +130,7 @@ void stack_dispose(scope_stack **stack){
 
 
 //symtable inserting values of variables
-void insert_variable_data(bst_node **tree, char *data){
+void insert_variable_data(bst_node *tree, char *data){
     int len = strlen(data);
     char *d = (char*)malloc((len + 1) * sizeof(char));
     strcpy(d, data);
@@ -135,24 +138,24 @@ void insert_variable_data(bst_node **tree, char *data){
     sym_t_variable *variable = (sym_t_variable*)malloc(sizeof(struct sym_t_variable));
     variable->data = d;
     
-    (*tree)->data = (sym_t_variable *)variable;
+    tree->data = (sym_t_variable *)variable;
 }
 
-void insert_variable_type(bst_node **tree, char *data){
+void insert_variable_type(bst_node *tree, char *data){
     if(strcmp(data, "Double") == 0){
-        (*tree)->variable_type = Double;
+        tree->variable_type = Double;
     }else if(strcmp(data, "Int") == 0){
-        (*tree)->variable_type = Int;
+        tree->variable_type = Int;
     }else if(strcmp(data, "String") == 0){
-        (*tree)->variable_type = String;
+        tree->variable_type = String;
     }else if(strcmp(data, "String?") == 0){
-        (*tree)->variable_type = String_nil;
+        tree->variable_type = String_nil;
         insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Int?") == 0){
-        (*tree)->variable_type = Int_nil;
+        tree->variable_type = Int_nil;
         insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Double?") == 0){
-        (*tree)->variable_type = Double_nil;
+        tree->variable_type = Double_nil;
         insert_variable_data(&(*tree), "nil"); 
     }    
 }

@@ -61,8 +61,8 @@ typedef struct sym_t_function {
 
 }sym_t_function;
 
-void insert_variable_data(bst_node **tree, char *data);
-void insert_variable_type(bst_node **tree, char *data);
+void insert_variable_data(bst_node *tree, char *data);
+void insert_variable_type(bst_node *tree, char *data);
 
 
 void insert_function(bst_node **tree, char *key, sym_t_function *data, bst_node_data_type data_type);
