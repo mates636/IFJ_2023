@@ -140,10 +140,10 @@ error_t can_be_variable_value(bst_node *tree_node, token_t *token){
             case STRING:
                 if( tree_node->variable_type == String ||
                     tree_node->variable_type == String_nil ||
-                    tree_node->variable_type == NULL){
+                    tree_node->variable_type == Not_specified){
                     
                     insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == NULL){
+                    if(tree_node->variable_type == Not_specified){
                         tree_node->variable_type = String;
                     }
                     return SUCCESS;
@@ -153,10 +153,10 @@ error_t can_be_variable_value(bst_node *tree_node, token_t *token){
             case INT:
                 if( tree_node->variable_type == Int ||
                     tree_node->variable_type == Int_nil ||
-                    tree_node->variable_type == NULL){
+                    tree_node->variable_type == Not_specified){
                     
                     insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == NULL){
+                    if(tree_node->variable_type == Not_specified){
                         tree_node->variable_type = Int;
                     }
                     return SUCCESS;
@@ -166,10 +166,10 @@ error_t can_be_variable_value(bst_node *tree_node, token_t *token){
             case DOUBLE:
                 if( tree_node->variable_type == Double ||
                     tree_node->variable_type == Double_nil ||
-                    tree_node->variable_type == NULL){
+                    tree_node->variable_type == Not_specified){
                     
                     insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == NULL){
+                    if(tree_node->variable_type == Not_specified){
                         tree_node->variable_type = Double;
                     }
                     return SUCCESS;
@@ -177,7 +177,7 @@ error_t can_be_variable_value(bst_node *tree_node, token_t *token){
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }
             case NIL:
-                if(tree_node->variable_type == NULL){
+                if(tree_node->variable_type == Not_specified){
                     return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
                 }
                 else if(tree_node->variable_type == Int_nil ||

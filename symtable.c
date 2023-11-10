@@ -29,7 +29,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
         bst_node *new_node = (bst_node*)malloc(sizeof(struct bst_node));
         new_node->key = key;
         new_node->data = NULL;
-        new_node->variable_type = NULL;
+        new_node->variable_type = Not_specified;
         new_node->node_data_type = data_type;
         new_node->left_child = NULL;
         new_node->right_child = NULL;
@@ -46,7 +46,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
             new_node->data = NULL;
-            new_node->variable_type = NULL;
+            new_node->variable_type = Not_specified;
             new_node->node_data_type = data_type;
             new_node->left_child = NULL;
             new_node->right_child = NULL;
@@ -59,7 +59,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
             bst_node *new_node = malloc(sizeof(struct bst_node));
             new_node->key = key;
             new_node->data = NULL;
-            new_node->variable_type = NULL;
+            new_node->variable_type = Not_specified;
             new_node->node_data_type = data_type;
             new_node->left_child= NULL;
             new_node->right_child = NULL;
@@ -83,7 +83,7 @@ void bst_dispose(bst_node **tree){
         bst_dispose(&(*tree)->left_child);
         bst_dispose(&(*tree)->right_child);
         free(*tree);
-        bst_init(&(*tree));
+        *tree = NULL;
     }
 
 
@@ -96,7 +96,8 @@ scope_stack *scope_stack_init(){
 
     bst_node *global_frame;
     bst_init(&global_frame);
-    stack->stack_array[0] = global_frame; 
+    stack->stack_array[0] = global_frame;
+    return stack; 
 }
 
 void scope_stack_push(scope_stack *stack){

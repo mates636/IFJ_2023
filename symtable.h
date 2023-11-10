@@ -16,6 +16,7 @@ typedef enum node_data_type {
 }bst_node_data_type;
 
 typedef enum variable_type {
+    Not_specified,
     String,
     Int,
     Double,
