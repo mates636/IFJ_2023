@@ -21,6 +21,22 @@ bst_node *bst_search(bst_node *tree, char *key){
     return NULL;
 }
 
+bst_node *search_in_all_scopes(scope_stack *stack, char *key){
+    bst_node *search;
+    bst_node *my_node;
+    int i = stack->top;
+
+    while(i != -1){
+        search = stack->stack_array[i];
+        my_node = bst_search(search, key);
+        if(my_node != NULL){
+            return my_node;
+        }
+        i--;
+    }
+    return NULL;
+}
+
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
     bst_node *parent_node = NULL;
     bst_node *tmp = (*tree);

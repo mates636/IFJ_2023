@@ -27,6 +27,7 @@ error_t run_parser(scanner_t *scanner){
 
             //checking error from scanner
             if(error != SUCCESS){
+                destroy_token(token);
                 return error;
             }
 
@@ -74,9 +75,9 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
     switch (token->type)
     {
         case KEYWORD:
-            if(token->data == "let"){
+            if(strcmp(token->data, "let") == 0){
                 return parser_variable(scanner, token);
-            }else if(token->data == "var"){
+            }else if(strcmp(token->data, "var") == 0){
                 return parser_variable(scanner, token);
             /*}else if(token->data == "if"){
                 return parser_if_statement();
@@ -121,7 +122,7 @@ error_t parser_variable_datatype(token_t *token){
     }
 }
 
-error_t can_be_variable_value(bst_node *tree_node, token_t *token){
+error_t can_be_variable_value(scanner_t *scanner, bst_node *tree_node, token_t *token){
     if( token->type == IDENTIFIER ||
         token->type == STRING ||
         token->type == INT ||
@@ -129,10 +130,26 @@ error_t can_be_variable_value(bst_node *tree_node, token_t *token){
         token->type == LEFT_PAR ||
         token->type == FUNC_IDENTRIFIER ||
         token->type == NIL){
+        
+        bst_node *right_variable;
 
         switch(token->type){
             case IDENTIFIER:
-
+                right_variable = search_in_all_scopes(stack, token->data);
+                if(right_variable == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }else{
+                    if(tree_node->variable_type == Not_specified){
+                        tree_node->variable_type = right_variable->variable_type;
+                    }
+                    if(right_variable->variable_type != tree_node->variable_type){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        sym_t_variable *variable = (sym_t_variable*)right_variable->data;
+                        insert_variable_data(tree_node, variable->data);
+                        return SUCCESS;
+                    }
+                }
             case LEFT_PAR:
 
             case FUNC_IDENTRIFIER:
@@ -284,7 +301,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         }
 
         //checking if we have correct right value
-        error = can_be_variable_value(tree_node, token);
+        error = can_be_variable_value(scanner, tree_node, token);
         if(error != SUCCESS){
             return error;
         }else{
@@ -300,5 +317,217 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
     }
 }
 ///////////////////////////////////////////////////////////////////////////////
+
+//expression type control for arithmetic and string operations
+error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type **type_control){
+    bst_node *id; 
+    
+    //first value in expression
+    if(type_control == Not_specified){
+        switch(token->type){
+            case IDENTIFIER:
+                id = search_in_all_scopes(stack, token->data);
+                (*type_control) = id->variable_type;
+                return SUCCESS;
+            case NIL:
+                (*type_control) = Not_specified;
+                return SUCCESS; 
+            case STRING:
+                (*type_control) = String;
+                return SUCCESS; 
+            case INT:
+                (*type_control) = Int;
+                return SUCCESS; 
+            case DOUBLE:
+                (*type_control) = Double;
+                return SUCCESS; 
+        }
+    //other values in expression - checking types validity
+    }else{
+        token_t *tmp = token;
+        if(tmp->type == IDENTIFIER){
+            id = search_in_all_scopes(stack, token->data);
+            if(id->variable_type == String){
+                tmp->type = STRING;
+            }else if(id->variable_type == Double){
+                tmp->type = DOUBLE;
+            }else if(id->variable_type == Int){
+                tmp->type = INT;
+            }
+        }
+
+        switch(tmp->type){
+            case IDENTIFIER:
+                
+                break;
+            case STRING:
+                if(String != (*type_control)){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+            case DOUBLE:
+                if((*type_control) == Double || (*type_control) == Int){
+                    (*type_control) = Double;
+                }else{
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+            case INT:
+                if((*type_control) == Int){
+                    (*type_control) = Int;
+                }else if((*type_control) == Double){
+                    (*type_control) == Double;
+                }else{
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+        }
+        return SUCCESS;
+    }
+}
+
+error_t parser_expression_type_control_rel_operators();
+
+token_t *realloc_previous_token(token_t **previous_token, token_t *token){
+    destroy_token((*previous_token));
+    token_t *realloc_token;
+    realloc_token = init_token_data(token->type, token->data,strlen(token->data) + 1);
+    return realloc_token;
+}
+
+///////////////////////////LEFT PARANTHESIS////////////////////////////////////
+error_t parser_expression_left_paranthesis(scanner_t *scanner, token_t *token, variable_type *type_control){
+    error_t error;
+    bst_node *variable;
+    variable_type *new_type;
+
+    token_t *previous_token;
+    previous_token = init_token_data(token->type, token->data, strlen(token->data) + 1);
+
+    bool must_be_operator = false;
+
+    new_type = (variable_type *)malloc(sizeof(variable_type));
+    new_type = type_control;
+    
+    while(token->type != RIGHT_PAR){
+
+    error = get_token(scanner, &token);
+    
+    switch(token->type){
+        case LEFT_PAR:
+            if(!must_be_operator){
+                parser_expression_left_paranthesis(scanner, token, (&new_type));
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case IDENTIFIER:
+            if(!must_be_operator){
+                variable = search_in_all_scopes(stack, token->data);
+                if(variable == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }else{
+                    error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
+                    if(error != SUCCESS){
+                        return error;
+                    }
+                    previous_token = realloc_previous_token(&previous_token, token);
+                    must_be_operator = true;
+                    break;
+                }
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case STRING:
+            if(!must_be_operator){
+                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
+                if(error != SUCCESS){
+                        return error;
+                }
+                previous_token = realloc_previous_token(&previous_token, token);
+                must_be_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case INT:
+            if(!must_be_operator){
+                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
+                if(error != SUCCESS){
+                        return error;
+                }
+                previous_token = realloc_previous_token(&previous_token, token);
+                must_be_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case DOUBLE:
+            if(!must_be_operator){
+                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
+                if(error != SUCCESS){
+                        return error;
+                }
+                previous_token = realloc_previous_token(&previous_token, token);
+                must_be_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case NIL:
+            if(!must_be_operator){
+                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
+                if(error != SUCCESS){
+                        return error;
+                }
+                previous_token = realloc_previous_token(&previous_token, token);
+                must_be_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        case TWO_QUESTIONNAIRE:
+            if()
+        case PLUS:
+
+        case MINUS:
+
+        case DIVIDE:
+
+        case MULTIPLY:
+
+        case EQUALS:
+
+        case LESS:
+
+        case NOT_EQUALS:
+
+        case MORE:
+
+        case LESS_EQUALS:
+
+        case MORE_EQUALS:
+
+        default:
+            return SYNTAX_ERROR;
+    }
+    //porovnani
+
+    //aritmetika
+
+    //retezce
+
+    //ocekavam pravou zavorku
+    }
+    if(must_be_operator){
+        return SYNTAX_ERROR;
+    }
+    destroy_token(previous_token);
+    free(new_type);
+    
+    
+}
+
+
 
 #endif

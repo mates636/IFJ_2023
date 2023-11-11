@@ -36,6 +36,7 @@ typedef struct bst_node {
 
 void bst_init(bst_node **tree);
 bst_node *bst_search(bst_node *tree, char *key);
+bst_node *search_in_all_scopes();
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
 void bst_dispose(bst_node **tree);
 
