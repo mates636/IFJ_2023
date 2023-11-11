@@ -12,15 +12,13 @@ scanner_t* init_scanner(FILE* f_input){
 
 error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
-        if((*token) != NULL){
-            destroy_token((*token));
-        }
+        
         char next_char;
-        printf("state: %d \n", scanner->state);
+        //printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
                 next_char = get_char(scanner);
-                printf("init got char %c\n", next_char);
+                //printf("init got char %c\n", next_char);
                 if(next_char == '\0'){
                     *token = init_token(EOF_TYPE);
                     return SUCCESS;

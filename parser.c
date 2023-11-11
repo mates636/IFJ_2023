@@ -4,6 +4,7 @@
 #define PARSER_C
 
 scope_stack *stack;
+variable_type type_control = Not_specified;
 
 //token for decision if i got next expression or not
 token_t *next_token = NULL;
@@ -39,16 +40,15 @@ error_t run_parser(scanner_t *scanner){
 
             //start of checking which expression i got
             error = parser_analyse(scanner, token); 
-
+            
             if(error != SUCCESS){
                 printf("chyba %d \n", error);
                 destroy_token(token);
                 return error;
             }
-            
             destroy_token(token);
         }else{
-
+            printf("%d\n", next_token->type);
             //end of file for compilation
             if(next_token->type == EOF_TYPE){
                 destroy_token(next_token);
@@ -79,8 +79,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_variable(scanner, token);
             }else if(strcmp(token->data, "var") == 0){
                 return parser_variable(scanner, token);
-            /*}else if(token->data == "if"){
-                return parser_if_statement();
+            /*}else if(token->){
+                return parser_expression(scanner, token);
             }else if(token->data == "func"){
                 return parser_function();
             }else else if(token->data == "while"){
@@ -88,6 +88,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             */}else{
                 return SYNTAX_ERROR;
             }
+        case LEFT_PAR:
+            return parser_expression(scanner, token);
         default:
             return SYNTAX_ERROR;
     }
@@ -319,27 +321,32 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 ///////////////////////////////////////////////////////////////////////////////
 
 //expression type control for arithmetic and string operations
-error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type **type_control){
+error_t parser_expression_type_control_arithmetic_strings(token_t *token){
     bst_node *id; 
+    
+   
     
     //first value in expression
     if(type_control == Not_specified){
         switch(token->type){
             case IDENTIFIER:
                 id = search_in_all_scopes(stack, token->data);
-                (*type_control) = id->variable_type;
+                if(id == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+                type_control = id->variable_type;
                 return SUCCESS;
             case NIL:
-                (*type_control) = Not_specified;
+                type_control = Not_specified;
                 return SUCCESS; 
             case STRING:
-                (*type_control) = String;
+                type_control = String;
                 return SUCCESS; 
             case INT:
-                (*type_control) = Int;
+                type_control = Int;
                 return SUCCESS; 
             case DOUBLE:
-                (*type_control) = Double;
+                type_control = Double;
                 return SUCCESS; 
         }
     //other values in expression - checking types validity
@@ -347,37 +354,60 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
         token_t *tmp = token;
         if(tmp->type == IDENTIFIER){
             id = search_in_all_scopes(stack, token->data);
-            if(id->variable_type == String){
+            if(id == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+            if(id->variable_type == String || id->variable_type == String_nil){
                 tmp->type = STRING;
-            }else if(id->variable_type == Double){
+            }else if(id->variable_type == Double || id->variable_type == Double_nil){
                 tmp->type = DOUBLE;
-            }else if(id->variable_type == Int){
+            }else if(id->variable_type == Int || id->variable_type == Int_nil){
                 tmp->type = INT;
             }
         }
 
         switch(tmp->type){
-            case IDENTIFIER:
-                
-                break;
             case STRING:
-                if(String != (*type_control)){
+                if(String != type_control || String_nil != type_control){
+                    
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }else{
+                    if(type_control == String_nil && id->variable_type == String){
+                        type_control = String;
+                    }
                 }
                 break;
             case DOUBLE:
-                if((*type_control) == Double || (*type_control) == Int){
-                    (*type_control) = Double;
+                if(type_control == Double ||
+                    type_control == Double_nil ||
+                    type_control == Int_nil || 
+                    type_control == Int){
+                        if((type_control == Double_nil || type_control == Int_nil) && id->variable_type == Double){
+                            type_control = Double;
+                        }else if((type_control == Double_nil || type_control == Int_nil) && id->variable_type == Double_nil){
+                            type_control = Double_nil;
+                        }else{
+                            type_control = Double;
+                        }
                 }else{
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }
                 break;
             case INT:
-                if((*type_control) == Int){
-                    (*type_control) = Int;
-                }else if((*type_control) == Double){
-                    (*type_control) == Double;
+            printf("%d\n", type_control);
+            printf("%d\n", id->variable_type);
+                if((type_control == Int || type_control == Int_nil) && (id->variable_type == Int || token->type == INT)){
+                    type_control = Int;
+                }else if(type_control == Int && id->variable_type == Int_nil){
+                    type_control = Int;
+                }else if(type_control == Int_nil && id->variable_type == Int_nil){
+                    type_control = Int_nil;
+                }else if(type_control == Double){
+                    type_control == Double;
+                }else if(type_control == Double_nil && id->variable_type == Int_nil){
+                    type_control == Double_nil;
                 }else{
+                    
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }
                 break;
@@ -386,7 +416,7 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
     }
 }
 
-error_t parser_expression_type_control_rel_operators();
+error_t parser_expression_type_control_rel_operators(token_t *token);
 
 token_t *realloc_previous_token(token_t **previous_token, token_t *token){
     destroy_token((*previous_token));
@@ -395,139 +425,89 @@ token_t *realloc_previous_token(token_t **previous_token, token_t *token){
     return realloc_token;
 }
 
-///////////////////////////LEFT PARANTHESIS////////////////////////////////////
-error_t parser_expression_left_paranthesis(scanner_t *scanner, token_t *token, variable_type *type_control){
+///////////////////////////EXPRESSION////////////////////////////////////
+error_t parser_expression(scanner_t *scanner, token_t *token){
     error_t error;
     bst_node *variable;
-    variable_type *new_type;
 
-    token_t *previous_token;
-    previous_token = init_token_data(token->type, token->data, strlen(token->data) + 1);
-
-    bool must_be_operator = false;
-
-    new_type = (variable_type *)malloc(sizeof(variable_type));
-    new_type = type_control;
+    bool want_VarOrLit = true;
+    bool want_operator = false;
+    bool arithmtic_and_strings = true; // if we want arithmetic and strings control its true, rel op. false
     
+    token_t *previous_token;
+    
+    //previous_token = init_token_data(token->type, token->data, strlen(token->data) + 1);
+    previous_token = token;
     while(token->type != RIGHT_PAR){
 
-    error = get_token(scanner, &token);
-    
-    switch(token->type){
-        case LEFT_PAR:
-            if(!must_be_operator){
-                parser_expression_left_paranthesis(scanner, token, (&new_type));
-                break;
-            }else{
-                return SYNTAX_ERROR;
+        error = get_token(scanner, &token);
+        
+
+        if((token->type == LEFT_PAR)){
+            error = parser_expression(scanner, token);
+            if(error != SUCCESS){
+                return error;
             }
-        case IDENTIFIER:
-            if(!must_be_operator){
-                variable = search_in_all_scopes(stack, token->data);
-                if(variable == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        else if(token->type == PLUS|| token->type == MINUS || token->type == MULTIPLY||
+                token->type == DIVIDE ||token->type == TWO_QUESTIONNAIRE){
+            
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                arithmtic_and_strings = true;
+                want_VarOrLit = true;
+                want_operator = false;
+                
+            }
+        }
+        else if(token->type == EQUALS || token->type == LESS || token->type == MORE ||
+                token->type == MORE_EQUALS || token->type == NOT_EQUALS || token->type == LESS_EQUALS){
+            
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                arithmtic_and_strings = false;
+                want_VarOrLit = true;
+                want_operator = false;
+            }
+
+        }else if(token->type == IDENTIFIER || token->type == STRING ||
+                token->type ==  INT || token->type == DOUBLE){
+
+            if(!want_VarOrLit){
+                return SYNTAX_ERROR;
+            }else{
+                if(arithmtic_and_strings){
+                    error = parser_expression_type_control_arithmetic_strings(token);
                 }else{
-                    error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
-                    if(error != SUCCESS){
-                        return error;
-                    }
+                    //error = parser_expression_type_control_rel_operators(token);
+                }
+                if(error != SUCCESS){
+                    return error;
+                }else{
+                
                     previous_token = realloc_previous_token(&previous_token, token);
-                    must_be_operator = true;
-                    break;
+
+
+                    want_VarOrLit = false;
+                    want_operator = true;
                 }
-            }else{
-                return SYNTAX_ERROR;
             }
-        case STRING:
-            if(!must_be_operator){
-                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
-                if(error != SUCCESS){
-                        return error;
-                }
-                previous_token = realloc_previous_token(&previous_token, token);
-                must_be_operator = true;
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        case INT:
-            if(!must_be_operator){
-                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
-                if(error != SUCCESS){
-                        return error;
-                }
-                previous_token = realloc_previous_token(&previous_token, token);
-                must_be_operator = true;
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        case DOUBLE:
-            if(!must_be_operator){
-                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
-                if(error != SUCCESS){
-                        return error;
-                }
-                previous_token = realloc_previous_token(&previous_token, token);
-                must_be_operator = true;
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        case NIL:
-            if(!must_be_operator){
-                error = parser_expression_type_control_arithmetic_strings(token, (&new_type));
-                if(error != SUCCESS){
-                        return error;
-                }
-                previous_token = realloc_previous_token(&previous_token, token);
-                must_be_operator = true;
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        case TWO_QUESTIONNAIRE:
-            if()
-        case PLUS:
-
-        case MINUS:
-
-        case DIVIDE:
-
-        case MULTIPLY:
-
-        case EQUALS:
-
-        case LESS:
-
-        case NOT_EQUALS:
-
-        case MORE:
-
-        case LESS_EQUALS:
-
-        case MORE_EQUALS:
-
-        default:
-            return SYNTAX_ERROR;
-    }
-    //porovnani
-
-    //aritmetika
-
-    //retezce
-
-    //ocekavam pravou zavorku
-    }
-    if(must_be_operator){
+        }else{
+            //TO DO novy prikaz zacinajici identifikatorem
+            break; //expression without parant.
+        }
+    }//while
+    error = get_token(scanner,&token);// JEN PRO DEBUG OPRAVIT
+    if(want_VarOrLit == true){
         return SYNTAX_ERROR;
     }
-    destroy_token(previous_token);
-    free(new_type);
     
-    
+    next_token = token;
+    //destroy_token(previous_token);
+
+    return SUCCESS;   
 }
-
-
 
 #endif

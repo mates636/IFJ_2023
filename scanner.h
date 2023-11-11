@@ -28,6 +28,7 @@ typedef enum token_type_t{
     ASSIGMENT,
     COMMA,
     PLUS,
+    TWO_QUESTIONNAIRE,
     MINUS,
     DIVIDE,
     MULTIPLY,
