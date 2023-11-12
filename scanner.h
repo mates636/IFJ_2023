@@ -38,7 +38,8 @@ typedef enum token_type_t{
     MORE,       //>
     MORE_EQUALS,//>=
     RETURN_TYPE,
-    COMMENT
+    COMMENT,
+    NIL_CONVERT 
 }token_type_t;
 
 
@@ -67,10 +68,7 @@ typedef enum state_t{
     S_COMMENT,
     S_COMMENT2,
     S_COMMENT3,
-
-
-
-    //intermediate states
+    S_NIL_CONVERT,
     S_IDENTIFIERORKEYWORD
 }state_t;
 
@@ -80,6 +78,8 @@ typedef struct scanner_t{
     size_t buffer_pos;
     state_t state;
     char rewind;
+    char prev_char;
+    char cur_char;
 }scanner_t;
 
 error_t get_token(scanner_t* scanner,token_t** token);

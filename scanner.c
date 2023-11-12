@@ -1,3 +1,16 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                scanner.c
+ * 
+ *                  Authors: Martin Priessnitz (xpries01)
+ *           Purpose: Source file with implementation of lexer (scanner)
+ * 
+ *                      Last change: 12.11.2023
+ *****************************************************************************/ 
+
+
+
+
 #include "scanner.h"
 
 
@@ -7,6 +20,9 @@ scanner_t* init_scanner(FILE* f_input){
     scanner->buffer_pos = 0;
     scanner->state = S_INIT;
     scanner->rewind = '\0';
+    scanner->prev_char = '\0';
+    scanner->cur_char = '\0';
+
     return scanner;
 }
 
@@ -23,7 +39,6 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     *token = init_token(EOF_TYPE);
                     return SUCCESS;
                 }
-                
                 if(is_white(next_char)){
                     scanner->state = S_INIT;
                 }else if(next_char == '\n'){
@@ -64,9 +79,9 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(next_char == '-'){
                     add_char(next_char, scanner);
                     scanner->state = S_RETURN_TYPE;
-                } else if(next_char == '{'){
-                    *token = init_token(LEFT_BR);
-                    return SUCCESS;
+                } else if(next_char == '?'){
+                    add_char(next_char, scanner);
+                    scanner->state = S_NIL_CONVERT;
                 } else if(next_char == ':'){
                     *token = init_token(COLON);
                     return SUCCESS;
@@ -87,6 +102,16 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else {
                     return LEXICAL_ERROR;
                 }
+            break;
+            case S_NIL_CONVERT:
+            next_char = get_char(scanner);
+            if(next_char == '?'){
+                scanner->state = S_INIT;
+                *token = init_token(DIVIDE);
+                scanner->buffer_pos = 0;
+                scanner->rewind = next_char;
+                return SUCCESS;
+            }
             break;
             case S_COMMENT:
                 next_char = get_char(scanner);
@@ -379,7 +404,10 @@ char get_char(scanner_t* scanner){
         scanner->rewind = '\0';
         return rew;
     }
+
     int n = fscanf(scanner->f_input, "%c", &c);
+    scanner->prev_char = scanner->cur_char;
+    scanner->cur_char = c;
     if(n <= 0){
         return '\0';
     } else {
@@ -387,8 +415,12 @@ char get_char(scanner_t* scanner){
     }
 }
 
+char previous_char(scanner_t* scanner){
+    return scanner->prev_char;
+}
+
 int is_white(char next_char){
-    if(next_char == ' '){
+    if((next_char == ' ') || (next_char == '\t')){
         return 1;
     } else {
         return 0;

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+cd ..
+make
+cd scanner_testcases
 for tcase_in in *.in; do
 tcase=`echo $tcase_in | cut -f1 -d.`
 echo "========== ${tcase} =========="
