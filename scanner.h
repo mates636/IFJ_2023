@@ -13,31 +13,32 @@ typedef enum token_type_t{
     IDENTIFIER,
     FUNC_IDENTRIFIER,//TODO
     NIL,//TODO
-    SEMICOLON,
-    LEFT_PAR,
-    RIGHT_PAR,
-    STRING,
-    EOF_TYPE,
-    INT,
-    DOUBLE,
-    KEYWORD,
-    COLON,
-    RIGHT_BR,
-    LEFT_BR,
-    EQUALS,
-    ASSIGMENT,
-    COMMA,
-    PLUS,
+    SEMICOLON,  //;
+    LEFT_PAR,   //(
+    RIGHT_PAR,  //)
+    STRING,//
+    EOF_TYPE,//
+    INT,//
+    DOUBLE,//
+    KEYWORD,//
+    COLON,      //:
+    RIGHT_BR,   //{
+    LEFT_BR,    //}
+    EQUALS,     //==
+    ASSIGMENT,  //=
+    COMMA,      //,
+    PLUS,       //+
     TWO_QUESTIONNAIRE,
-    MINUS,
-    DIVIDE,
-    MULTIPLY,
-    LESS,
-    NOT_EQUALS,
-    LESS_EQUALS,
-    MORE,
-    MORE_EQUALS,
-    RETURN_TYPE
+    MINUS,      //-
+    DIVIDE,     ///
+    MULTIPLY,   //*
+    LESS,       //<
+    NOT_EQUALS, //!=
+    LESS_EQUALS,//<=
+    MORE,       //>
+    MORE_EQUALS,//>=
+    RETURN_TYPE,
+    COMMENT
 }token_type_t;
 
 
@@ -62,6 +63,12 @@ typedef enum state_t{
     S_MORE,
     S_EQUALS,
     S_RETURN_TYPE,
+    S_STRING_ESCAPE,
+    S_COMMENT,
+    S_COMMENT2,
+    S_COMMENT3,
+
+
 
     //intermediate states
     S_IDENTIFIERORKEYWORD
@@ -92,6 +99,8 @@ int is_white(char next_char);
 int is_letter(char next_char);
 
 int is_digit(char next_char);
+
+int is_escape(char next_char);
 
 bool is_keyword(scanner_t* scanner);
 

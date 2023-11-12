@@ -1,0 +1,53 @@
+11 "func"
+1 "bar"
+5
+1 "with"
+1 "param"
+12
+11 "String"
+6
+28
+11 "String"
+14
+1 "let"
+1 "r"
+12
+11 "String"
+15
+1 "foo"
+5
+1 "param"
+6asd
+11 "return"
+11 "r"
+13
+1 "func"
+1 "foo"
+5
+1 "_"
+1 "par"
+12
+11 "String"
+6
+28
+11 "String"
+14
+1 "let"
+1 "ret"
+15
+1 "bar"
+5
+1 "with"
+12
+1 "par"
+6
+11 "return"
+11 "ret"
+13
+1 "bar"
+5
+1 "with"
+12
+7 "ahoj"
+6
+8
