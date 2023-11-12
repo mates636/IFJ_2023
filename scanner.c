@@ -42,7 +42,8 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_white(next_char)){
                     scanner->state = S_INIT;
                 }else if(next_char == '\n'){
-                    scanner->state = S_INIT;
+                    *token = init_token(NEW_LINE);
+                    return SUCCESS;
                 } else if(next_char == '{'){
                     *token = init_token(LEFT_BR);
                     return SUCCESS;
@@ -85,8 +86,8 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(next_char == ':'){
                     *token = init_token(COLON);
                     return SUCCESS;
-                } else if(next_char == '{'){
-                    *token = init_token(LEFT_BR);
+                } else if(next_char == '!'){
+                    *token = init_token(EXCLAMATION);
                     return SUCCESS;
                 } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
@@ -107,9 +108,8 @@ error_t get_token(scanner_t* scanner,token_t** token){
             next_char = get_char(scanner);
             if(next_char == '?'){
                 scanner->state = S_INIT;
-                *token = init_token(DIVIDE);
+                *token = init_token(NIL_CONVERT);
                 scanner->buffer_pos = 0;
-                scanner->rewind = next_char;
                 return SUCCESS;
             }
             break;
@@ -265,19 +265,27 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIER;
-                } else if(is_letter(next_char)){
+                } else if(is_letter(next_char)){ // || next_char == '?'
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
                 } else{
                     if(strcmp(scanner->buffer, "_") == 0){
-                        return LEXICAL_ERROR;
-                    }
-                    if(is_keyword(scanner)){
                         scanner->state = S_INIT;
-                        *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
+                        *token = init_token_data(NO_TYPE, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
                         scanner->buffer_pos = 0;
                         return SUCCESS;
+                    }
+                    if(is_keyword(scanner)){
+                        next_char = get_char(scanner);
+                        // if(next_char == '?'){
+                            scanner->state = S_INIT;
+                            *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
+                            scanner->rewind = next_char;
+                            scanner->buffer_pos = 0;
+                            return SUCCESS;
+                        // }
+                       
                     } else{
                         scanner->state = S_INIT;
                         *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
@@ -291,12 +299,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 next_char = get_char(scanner);
                 if(is_letter(next_char) || is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
-
                     scanner->state = IDENTIFIER;
-
-                    // *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
-                    // scanner->buffer_pos = 0;
-                    // return SUCCESS;
                 }else{
                     scanner->state = S_INIT;
                     *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
@@ -454,7 +457,7 @@ int is_escape(char next_char){
 
 bool is_keyword(scanner_t* scanner){
     char *keywords[] = {
-        "Double", "else", "func", "if", "Int", "let", "nil", "return", "String", "var", "while"
+        "Double", "Double?", "else", "func", "if", "Int", "Int?", "let", "nil", "return", "String", "String?", "var", "while"
     };
 
     int keywords_number = sizeof(keywords) / sizeof(keywords[0]);

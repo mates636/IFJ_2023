@@ -37,9 +37,12 @@ typedef enum token_type_t{
     LESS_EQUALS,//<=
     MORE,       //>
     MORE_EQUALS,//>=
-    RETURN_TYPE,
-    COMMENT,
-    NIL_CONVERT 
+    RETURN_TYPE,//->
+    COMMENT,    // //, /**/
+    NIL_CONVERT,//??
+    EXCLAMATION,//!
+    NEW_LINE,   //\n
+    NO_TYPE     //_
 }token_type_t;
 
 
