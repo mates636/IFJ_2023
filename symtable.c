@@ -177,4 +177,8 @@ void insert_variable_type(bst_node *tree, char *data){
     }    
 }
 
+
+
+
+
 #endif

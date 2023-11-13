@@ -40,8 +40,8 @@ bst_node *search_in_all_scopes();
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
 void bst_dispose(bst_node **tree);
 
-//stack for scope
 
+//stack for scope
 typedef struct stack {
     bst_node *stack_array[STACK_MAX_SIZE];
     int top;
@@ -53,8 +53,8 @@ void scope_stack_pop(scope_stack *stack);
 bst_node *current_scope(scope_stack *stack);
 void stack_dispose(scope_stack **stack);
 
-//symtable inserting
 
+//symtable inserting
 typedef struct sym_t_variable {
     char *data;
 }sym_t_variable;
@@ -65,8 +65,15 @@ typedef struct sym_t_function {
 
 void insert_variable_data(bst_node *tree, char *data);
 void insert_variable_type(bst_node *tree, char *data);
-
-
 void insert_function(bst_node **tree, char *key, sym_t_function *data, bst_node_data_type data_type);
+
+
+//stack for paranthesis and brackets
+typedef struct par_stack {
+    char par_stack_array[STACK_MAX_SIZE];
+    int top;
+}par_stack;
+
+
 
 #endif
