@@ -30,6 +30,9 @@ error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
         
         char next_char;
+        // printf("1%c\n", next_char);
+
+        // printf("2%c\n", scanner->prev_char);
         // printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
@@ -172,6 +175,25 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_escape(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_STRING;
+                } else if(next_char == 'u'){
+                    add_char(next_char, scanner);
+                    next_char = get_char(scanner);
+                    if(next_char == '{'){
+                        add_char(next_char, scanner);
+                        next_char = get_char(scanner);
+                        if((is_digit(next_char)) || (next_char >= 'a' && next_char <= 'f') || (next_char >= 'A' && next_char <= 'F')){
+                            add_char(next_char, scanner);
+                            next_char = get_char(scanner);
+                            if((is_digit(next_char)) || (next_char >= 'a' && next_char <= 'f') || (next_char >= 'A' && next_char <= 'F')){
+                                add_char(next_char, scanner);
+                                next_char = get_char(scanner);
+                                if(next_char == '}'){
+                                    add_char(next_char, scanner);
+                                    scanner->state = S_STRING;
+                                }
+                            }
+                        }
+                    }
                 } else {
                     return LEXICAL_ERROR;
                 }
@@ -261,13 +283,26 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 
             break;
             case S_IDENTIFIERORKEYWORD:
+            // printf("%c\n",next_char);
                 next_char = get_char(scanner);
+            // printf("%c\n",next_char);
+
                 if(is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIER;
-                } else if(is_letter(next_char)){ // || next_char == '?'
+                } else if(is_letter(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
+                } else if (next_char == '?'){
+                    add_char(next_char, scanner);
+                    if(is_keyword(scanner)){
+                        scanner->state = S_INIT;
+                        *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
+                        scanner->buffer_pos = 0;
+                        return SUCCESS;
+                    } else {
+                        return LEXICAL_ERROR;
+                    }
                 } else{
                     if(strcmp(scanner->buffer, "_") == 0){
                         scanner->state = S_INIT;
@@ -277,15 +312,11 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         return SUCCESS;
                     }
                     if(is_keyword(scanner)){
-                        next_char = get_char(scanner);
-                        // if(next_char == '?'){
-                            scanner->state = S_INIT;
-                            *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
-                            scanner->rewind = next_char;
-                            scanner->buffer_pos = 0;
-                            return SUCCESS;
-                        // }
-                       
+                        scanner->state = S_INIT;
+                        *token = init_token_data(KEYWORD, scanner->buffer, scanner->buffer_pos);
+                        scanner->rewind = next_char;
+                        scanner->buffer_pos = 0;
+                        return SUCCESS;
                     } else{
                         scanner->state = S_INIT;
                         *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
@@ -309,16 +340,25 @@ error_t get_token(scanner_t* scanner,token_t** token){
             break;
             case S_LESS:
                 next_char = get_char(scanner);
-                if(next_char == '>'){
-                    scanner->state = S_INIT;
-                    *token = init_token(NOT_EQUALS);
-                    scanner->buffer_pos = 0;
+        // printf("2%c\n", scanner->prev_char);
+                char c = scanner->prev_char;
+                
+                // char pre_ch = get_char(scanner->prev_char);
+                // if(next_char == '>'){
+                //     if(pre_ch == " "){
+                //         scanner->state = S_INIT;
+                //         *token = init_token(NOT_EQUALS);
+                //         scanner->buffer_pos = 0;
+                //         return SUCCESS;
+                //     }
+                if(next_char == '='){
+                    // if(c == " "){
+                        scanner->state = S_INIT;
+                        *token = init_token(LESS_EQUALS);
+                        scanner->buffer_pos = 0;
                     return SUCCESS;
-                } else if(next_char == '='){
-                    scanner->state = S_INIT;
-                    *token = init_token(LESS_EQUALS);
-                    scanner->buffer_pos = 0;
-                    return SUCCESS;
+                    // }
+                    
                 } else {
                     scanner->state = S_INIT;
                     *token = init_token(LESS);
@@ -447,7 +487,6 @@ int is_digit(char next_char){
 }
 
 int is_escape(char next_char){
-    printf("3\n");
     if((next_char == '\"') || (next_char == 'n') || (next_char == 'r') || (next_char == 't') || (next_char == '\\')){
         return 1;
     } else {
