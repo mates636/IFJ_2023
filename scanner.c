@@ -340,25 +340,11 @@ error_t get_token(scanner_t* scanner,token_t** token){
             break;
             case S_LESS:
                 next_char = get_char(scanner);
-        // printf("2%c\n", scanner->prev_char);
-                char c = scanner->prev_char;
-                
-                // char pre_ch = get_char(scanner->prev_char);
-                // if(next_char == '>'){
-                //     if(pre_ch == " "){
-                //         scanner->state = S_INIT;
-                //         *token = init_token(NOT_EQUALS);
-                //         scanner->buffer_pos = 0;
-                //         return SUCCESS;
-                //     }
                 if(next_char == '='){
-                    // if(c == " "){
-                        scanner->state = S_INIT;
-                        *token = init_token(LESS_EQUALS);
-                        scanner->buffer_pos = 0;
+                    scanner->state = S_INIT;
+                    *token = init_token(LESS_EQUALS);
+                    scanner->buffer_pos = 0;
                     return SUCCESS;
-                    // }
-                    
                 } else {
                     scanner->state = S_INIT;
                     *token = init_token(LESS);
