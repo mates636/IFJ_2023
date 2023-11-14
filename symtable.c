@@ -3,6 +3,7 @@
 #ifndef SYMTABLE_C
 #define SYMTABLE_C
 
+
 //BST functions
 void bst_init(bst_node **tree){
     (*tree) = NULL;
@@ -21,7 +22,7 @@ bst_node *bst_search(bst_node *tree, char *key){
     return NULL;
 }
 
-bst_node *search_in_all_scopes(scope_stack *stack, char *key){
+bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key){
     bst_node *search;
     bst_node *my_node;
     int i = stack->top;
@@ -105,6 +106,7 @@ void bst_dispose(bst_node **tree){
 
 }
 
+
 //stack functions
 scope_stack *scope_stack_init(){
     scope_stack *stack = (scope_stack*)malloc(sizeof(scope_stack));
@@ -124,15 +126,16 @@ void scope_stack_push(scope_stack *stack){
     stack->stack_array[stack->top] = local_frame;
 }
 
-void scope_stack_pop(scope_stack *stack){
+error_t scope_stack_pop(scope_stack *stack){
     if(stack->top == 0){
-        printf("cant pop global frame\n");
-        return;
+        return INTERN_ERROR;
     }
 
     bst_node *root = stack->stack_array[stack->top];
     bst_dispose(&root);
     stack->top = stack->top - 1;
+
+    return SUCCESS;
 }
 
 bst_node *current_scope(scope_stack *stack){
@@ -144,9 +147,7 @@ void stack_dispose(scope_stack **stack){
 }
 
 
-
-
-//symtable inserting values of variables
+//symtable inserting 
 void insert_variable_data(bst_node *tree, char *data){
     int len = strlen(data);
     char *d = (char*)malloc((len + 1) * sizeof(char));
@@ -175,6 +176,73 @@ void insert_variable_type(bst_node *tree, char *data){
         tree->variable_type = Double_nil;
         insert_variable_data(&(*tree), "nil"); 
     }    
+}
+
+
+//stack for paranthesis and brackets
+par_stack *par_stack_init(){
+    par_stack *stack = (par_stack*)malloc(sizeof(par_stack));
+    stack->top = 0;
+    return stack;
+}
+
+void par_stack_push(par_stack *par_stack, char c){
+    par_stack->par_stack_array[par_stack->top] = c;
+    par_stack->top = par_stack->top + 1;
+}
+
+void par_stack_pop(par_stack *par_stack){
+    par_stack->top = par_stack->top - 1;
+}
+bool par_stack_is_empty(par_stack *par_stack){
+    if(par_stack->top == 0){
+        return true;
+    }else{
+        return false;
+    }
+}
+void par_stack_dispose(par_stack **par_stack){
+    (*par_stack)->top = 0;
+    free((*par_stack));
+}
+
+
+expression_s *expression_stack_init(){
+    expression_s *stack = (expression_s*)malloc(sizeof(expression_s));
+    stack->top = -1;
+    return stack;
+}
+void expression_stack_push(expression_s *expression_stack, token_t *token){
+    token_t *t;
+    size_t len;
+    char *d;
+    if(token->data == NULL){
+        len = 1;
+        d[0] = ';';
+    }else{
+        len = strlen(token->data) + 1;
+        d = token->data;
+    }    
+    t = init_token_data(token->type, d, len);
+    expression_stack->top = expression_stack->top + 1;
+    expression_stack->token_array[expression_stack->top] = t;  
+}
+
+token_t *expression_stack_pop(expression_s *expression_stack){
+    token_t *t;
+    t = expression_stack->token_array[expression_stack->top];
+    expression_stack->top = expression_stack->top - 1;
+    return t;
+}
+bool expression_stack_is_empty(expression_s *expression_stack){
+    if(expression_stack->top == 0){
+        return true;
+    }else{
+        return false;
+    }
+}
+void expression_stack_dispose(expression_s **expression_stack){
+    free(*expression_stack);
 }
 
 
