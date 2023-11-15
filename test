@@ -1,2 +1,1 @@
-String + = 
-//Int?
+func foo (name id : String, name id : String) -> String {

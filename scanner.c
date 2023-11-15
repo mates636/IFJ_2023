@@ -283,10 +283,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 
             break;
             case S_IDENTIFIERORKEYWORD:
-            // printf("%c\n",next_char);
                 next_char = get_char(scanner);
-            // printf("%c\n",next_char);
-
                 if(is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIER;
@@ -304,7 +301,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         return LEXICAL_ERROR;
                     }
                 } else{
-                    if(strcmp(scanner->buffer, "_") == 0){
+                    if(strncmp(scanner->buffer, "_", scanner->buffer_pos) == 0){
                         scanner->state = S_INIT;
                         *token = init_token_data(NO_TYPE, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
@@ -435,6 +432,7 @@ char get_char(scanner_t* scanner){
     }
 
     int n = fscanf(scanner->f_input, "%c", &c);
+    // printf("got char: %c in state %d\n", c, scanner->state);
     scanner->prev_char = scanner->cur_char;
     scanner->cur_char = c;
     if(n <= 0){
@@ -488,7 +486,7 @@ bool is_keyword(scanner_t* scanner){
     int keywords_number = sizeof(keywords) / sizeof(keywords[0]);
 
     for(int i = 0; i < keywords_number; i++){
-        if(strcmp(scanner->buffer, keywords[i]) == 0){
+        if(strncmp(scanner->buffer, keywords[i], scanner->buffer_pos) == 0){
             return true;
         }
     }
