@@ -85,6 +85,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_variable(scanner, token);
             }else if(strcmp(token->data, "func") == 0){
                 return parser_function(scanner, token);
+                
             /*}else if(token->){
                 return parser_expression(scanner, token);
             }else if(token->data == "func"){
@@ -898,8 +899,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
 error_t parser_function(scanner_t *scanner, token_t *token){
     error_t error;
     error = get_token(scanner, &token);
-
-    if(token->type  != IDENTIFIER){
+    if(token->type  != IDENTIFIER){\
         return SYNTAX_ERROR;
     }
 
@@ -908,7 +908,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
         return SYNTAX_ERROR;
     }
 
-    //kontrola argumentu funkce
+    // //kontrola argumentu funkce
     error = parser_argument(scanner, token);
 
     if(error != SUCCESS){
@@ -917,10 +917,9 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
     //kontrola navratoveho typu
     error = parser_return_type(scanner,token);
-    if(error != SUCCESS){
-        return SYNTAX_ERROR;
-    }
-
+    // if(error != SUCCESS){
+    //     return SYNTAX_ERROR;
+    // }
     return SUCCESS;
 }
 
