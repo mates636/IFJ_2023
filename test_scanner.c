@@ -10,14 +10,13 @@ int main(int argc, char** argv){
         token_t* token;
         error_t err = get_token(scanner, &token);
         if(err != SUCCESS){
-            printf("chyba %d\n", err);
+            printf("chyba %d \n", err);
             break;
         }
-        printf("%d", token->type);
+        printf("token type: %d \n", token->type);
         if(token->data){
-            printf(" \"%s\"", token->data);
+            printf("token data: \"%s\" \n", token->data);
         }
-        printf("\n");
         if(token->type == EOF_TYPE){
             destroy_token(token);
             break;

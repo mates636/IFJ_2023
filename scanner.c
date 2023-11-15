@@ -166,7 +166,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else {
                     scanner->state = S_INIT;
                     *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
-                    scanner->buffer_pos = 0;
+                    scanner->buffer_pos = 0;                
                     return SUCCESS;
                 }
             break;

@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 func foo (name id : String, name id : String) -> String {
+=======
+String?
+>>>>>>> f870b633c4cc836d7be7edae4cf125bba5f68499
