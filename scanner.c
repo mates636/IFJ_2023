@@ -369,12 +369,12 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 next_char = get_char(scanner);
                 if(next_char == '='){
                     scanner->state = S_INIT;
-                    *token = init_token(ASSIGMENT);
+                    *token = init_token(EQUALS);
                     scanner->buffer_pos = 0;
                     return SUCCESS;
                 } else {
                     scanner->state = S_INIT;
-                    *token = init_token(EQUALS);
+                    *token = init_token(ASSIGMENT);
                     scanner->rewind = next_char;
                     scanner->buffer_pos = 0;
                     return SUCCESS;
