@@ -889,4 +889,82 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     return SUCCESS;   
 }
 
+
+error_t parser_function(scanner_t *scanner, token_t *token){
+    error_t error;
+    error = get_token(scanner, &token);
+
+    if(token->type  != IDENTIFIER){
+        return SYNTAX_ERROR;
+    }
+
+    error = get_token(scanner, &token);
+    if(token->type != LEFT_PAR){
+        return SYNTAX_ERROR;
+    }
+
+    //kontrola argumentu funkce
+    error = parser_argument(scanner, token);
+
+    if(error != SUCCESS){
+        return SYNTAX_ERROR;
+    }
+
+    //kontrola navratoveho typu
+    error = parser_return_type(scanner,token);
+    if(error != SUCCESS){
+        return SYNTAX_ERROR;
+    }
+
+    return SUCCESS;
+}
+
+error_t parser_argument(scanner_t *scanner, token_t *token){
+    error_t error;
+
+    while(token->type != RIGHT_PAR){
+        error = get_token(scanner, &token);
+        if(token->type != IDENTIFIER){
+            return SYNTAX_ERROR;
+        }
+        error = get_token(scanner, &token);
+        if(token->type != IDENTIFIER){
+            return SYNTAX_ERROR;
+        }
+        error = get_token(scanner, &token);
+        if(token->type != COLON){
+            return SYNTAX_ERROR;
+        }
+        error = get_token(scanner, &token);
+        if(token->type != KEYWORD){
+            return SYNTAX_ERROR;
+        }
+        error = get_token(scanner, &token);
+        if(token->type == COMMA){
+            //pocet argumentu vice nez 1 
+        }
+    }
+
+    return SUCCESS;
+}
+
+error_t parser_return_type(scanner_t *scanner, token_t *token){
+    error_t error;
+
+    error = get_token(scanner, &token);
+    if(token->type != RETURN_TYPE){
+        return SYNTAX_ERROR;
+    }
+    error = get_token(scanner, &token);
+    if(token->type != KEYWORD){
+        return SYNTAX_ERROR;
+    }
+    error = get_token(scanner, &token);
+    if(token->type != LEFT_BR){
+        return SYNTAX_ERROR;
+    }
+    return SUCCESS;
+}
+
+
 #endif
