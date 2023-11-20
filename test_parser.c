@@ -16,5 +16,9 @@ int main(int argc, char** argv){
     init_parser();
     error_t error = run_parser(scanner);
     printf("%d\n", error);
+    free_parser();
+    fclose(source);
     return 0;
 }
+
+// #endif

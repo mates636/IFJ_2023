@@ -19,11 +19,10 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
 error_t parser_variable(scanner_t *scanner, token_t *t);
 error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify);
 error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_node *tree_node);
-// error_t parser_expression(scanner_t *scanner, token_t *token);
+error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type);
 error_t parser_function(scanner_t *scanner, token_t *token);
 error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *struktura);
 
-error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type);
 //error_t parser_function();
 //error_t parser_if_statement();
 //error_t parser_while_statement();

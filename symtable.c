@@ -242,7 +242,9 @@ void expression_stack_push(expression_s *expression_stack, token_t *token){
     char *d;
     if(token->data == NULL){
         len = 1;
+        d = (char *)malloc(sizeof(char) * 2);
         d[0] = ';';
+        d[1] = '\0';
     }else{
         len = strlen(token->data) + 1;
         d = token->data;

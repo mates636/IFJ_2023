@@ -96,6 +96,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return SYNTAX_ERROR;
             }
         case LEFT_PAR:
+        par_stack_push(p_stack, '(');
             return parser_expression(scanner, token, NULL);
         default:
             return SYNTAX_ERROR;
@@ -652,25 +653,15 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     //flags for decision what i need from token
     bool want_VarOrLit = true;
     bool want_operator = false;
-    bool skip = false;
 
     //processing expression
     while(true){
 
-        //if i already have token from ?? or ! check, skipping
-        if(skip == false){
             error = get_token(scanner, &token);
             if(error != SUCCESS){
                 return error;
             }
-        }else{
-            skip = false;
-        }
-
-        if(token->type == RIGHT_PAR){
-            par_stack_pop(p_stack);
-        }
-
+            
         ///////////////got (
         if((token->type == LEFT_PAR)){
             if(!want_VarOrLit){
@@ -716,14 +707,13 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     priority = 1;
                     expression_stack_push(expression_stack, token);
                 }
-
+                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false; 
             }
         
         ///////////////got + -
         }else if(token->type == PLUS || token->type == MINUS){
-            
             if(!want_operator){
                 return SYNTAX_ERROR;
             }else{
@@ -749,7 +739,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     priority = 2;
                     expression_stack_push(expression_stack, token);
                 }
-
+                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
             }
@@ -784,7 +774,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     expression_stack_push(expression_stack, token);
                 }
 
-
+                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
             }
@@ -864,7 +854,9 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                         return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                     }
                 }
-                expression_stack_push(expression_stack, token);    
+                
+                expression_stack_push(expression_stack, token);
+                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);    
                 want_VarOrLit = false;
                 want_operator = true;          
             }
@@ -875,6 +867,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 }
                 break;
             }else{
+               
+                printf("%d\n", token->type);
                 return SYNTAX_ERROR;
             }
         }
@@ -895,6 +889,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     }
     return SUCCESS;   
 }
+
 
 error_t parser_function(scanner_t *scanner, token_t *token){
     error_t error;
