@@ -898,10 +898,24 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
 
 error_t parser_function(scanner_t *scanner, token_t *token){
     error_t error;
+    sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
+    function->num_params = 0;
+
+    
     error = get_token(scanner, &token);
-    if(token->type  != IDENTIFIER){\
+    if(token->type  != IDENTIFIER){
         return SYNTAX_ERROR;
     }
+
+
+    bst_node *identifier = bst_search(current_scope(stack), token->data);
+    if(identifier != NULL){
+        printf("definovany\n");
+        return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR; //TODO
+    }
+    function->id = malloc(strlen(token->data) + 1);
+    strcpy(function->id, token->data);
+
 
     error = get_token(scanner, &token);
     if(token->type != LEFT_PAR){
@@ -909,32 +923,53 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     }
 
     // //kontrola argumentu funkce
-    error = parser_argument(scanner, token);
+    error = parser_argument(scanner, token, function);
 
     if(error != SUCCESS){
         return SYNTAX_ERROR;
     }
 
     //kontrola navratoveho typu
-    error = parser_return_type(scanner,token);
-    // if(error != SUCCESS){
-    //     return SYNTAX_ERROR;
-    // }
+    error = parser_return_type(scanner,token, function);
+    if(error != SUCCESS){
+        return SYNTAX_ERROR;
+    }
+
+    // bst_node *tree_node = current_scope(stack);
+    bst_node *tree_node = stack->stack_array[0];
+    insert_function(&tree_node, function->id, function);
+
     return SUCCESS;
 }
 
-error_t parser_argument(scanner_t *scanner, token_t *token){
+error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
+    sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
+ 
 
-    while(token->type != RIGHT_PAR){
+    error = get_token(scanner, &token);
+    if(token->type != RIGHT_PAR){
+    while(1){
+        if(struktura->num_params == 0){
+            struktura->params = (sym_t_param*)malloc(sizeof(sym_t_param));
+        } else {
+            struktura->params = (sym_t_param*)realloc(struktura->params,sizeof(sym_t_param) * (struktura->num_params + 1));
+        }
+        if(token->type != IDENTIFIER){
+            return SYNTAX_ERROR;
+        }
+
+        struktura->params[struktura->num_params].param_name = malloc(strlen(token->data) + 1);
+        strcpy(struktura->params->param_name, token->data);
+
         error = get_token(scanner, &token);
         if(token->type != IDENTIFIER){
             return SYNTAX_ERROR;
         }
-        error = get_token(scanner, &token);
-        if(token->type != IDENTIFIER){
-            return SYNTAX_ERROR;
-        }
+
+        struktura->params[struktura->num_params].param_id = malloc(strlen(token->data) + 1);
+        strcpy(struktura->params->param_id, token->data);
+
         error = get_token(scanner, &token);
         if(token->type != COLON){
             return SYNTAX_ERROR;
@@ -943,26 +978,48 @@ error_t parser_argument(scanner_t *scanner, token_t *token){
         if(token->type != KEYWORD){
             return SYNTAX_ERROR;
         }
+
+        variable_type param_type = find_variable_type(token->data);
+        if(param_type == Not_specified){
+            return SYNTAX_ERROR;
+        }
+        struktura->params->param_type = param_type;
+        struktura->num_params += 1;
+
         error = get_token(scanner, &token);
         if(token->type == COMMA){
-            //pocet argumentu vice nez 1 
+            // printf("mam carku\n");
+            //pocet argumentu vice nez 1
+        error = get_token(scanner, &token);
+
+        } else if(token->type == RIGHT_PAR){
+            break;
+        } else {
+            return SYNTAX_ERROR;
         }
+
     }
 
+    }
     return SUCCESS;
 }
 
-error_t parser_return_type(scanner_t *scanner, token_t *token){
+error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
-
+    
     error = get_token(scanner, &token);
     if(token->type != RETURN_TYPE){
         return SYNTAX_ERROR;
     }
+    
     error = get_token(scanner, &token);
     if(token->type != KEYWORD){
         return SYNTAX_ERROR;
     }
+
+    variable_type variable = find_variable_type(token->data);
+    struktura->return_type = variable;
+
     error = get_token(scanner, &token);
     if(token->type != LEFT_BR){
         return SYNTAX_ERROR;

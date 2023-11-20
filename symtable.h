@@ -61,14 +61,25 @@ typedef struct sym_t_variable {
     char *data;
 }sym_t_variable;
 
-typedef struct sym_t_function {
+typedef struct sym_t_param{
+    char *param_name;
+    char *param_id;
+    variable_type param_type;
+}sym_t_param;
 
+
+typedef struct sym_t_function {
+    char *id;
+    variable_type return_type;
+    sym_t_param *params;
+    int num_params;
 }sym_t_function;
+
 
 void insert_variable_data(bst_node *tree, char *data);
 void insert_variable_type(bst_node *tree, char *data);
-void insert_function(bst_node **tree, char *key, sym_t_function *data, bst_node_data_type data_type);
-
+void insert_function(bst_node **tree, char *key, sym_t_function *data);
+variable_type find_variable_type(char *data);
 
 //stack for paranthesis and brackets
 typedef struct par_stack {

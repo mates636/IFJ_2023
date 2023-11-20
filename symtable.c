@@ -142,6 +142,7 @@ bst_node *current_scope(scope_stack *stack){
     return stack->stack_array[stack->top];
 }
 
+
 void stack_dispose(scope_stack **stack){
     free(*stack);
 }
@@ -176,6 +177,29 @@ void insert_variable_type(bst_node *tree, char *data){
         tree->variable_type = Double_nil;
         insert_variable_data(&(*tree), "nil"); 
     }    
+}
+
+variable_type find_variable_type(char *data){
+    if(strcmp(data, "Double") == 0){
+        return  Double;
+    }else if(strcmp(data, "Int") == 0){
+        return  Int;
+    }else if(strcmp(data, "String") == 0){
+        return String;
+    }else if(strcmp(data, "String?") == 0){
+        return String_nil;
+    }else if(strcmp(data, "Int?") == 0){
+        return Int_nil;
+    }else if(strcmp(data, "Double?") == 0){
+        return Double_nil;
+    }else{
+        return Not_specified;
+    }
+}
+
+void insert_function(bst_node **tree, char *key, sym_t_function *data){
+    bst_insert(tree, key, FUNCTION);
+    (*tree)->data = data;
 }
 
 
