@@ -215,7 +215,7 @@ void par_stack_push(par_stack *par_stack, char c){
     par_stack->top = par_stack->top + 1;
 }
 
-void par_stack_pop(par_stack *par_stack){
+error_t par_stack_pop(par_stack *par_stack){
     par_stack->top = par_stack->top - 1;
 }
 bool par_stack_is_empty(par_stack *par_stack){
