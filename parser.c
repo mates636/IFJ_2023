@@ -2,7 +2,7 @@
 #include "parser.h"
 
 #ifndef PARSER_C
-#define PARSER_C
+#define PARSER_C 
 
 scope_stack *stack;//symtable
 par_stack *p_stack;
