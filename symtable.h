@@ -91,7 +91,7 @@ typedef struct par_stack {
 
 par_stack *par_stack_init();
 void par_stack_push(par_stack *par_stack, char c);
-void par_stack_pop(par_stack *par_stack);
+error_t par_stack_pop(par_stack *par_stack);
 bool par_stack_is_empty(par_stack *par_stack);
 void par_stack_dispose(par_stack **par_stack);
 

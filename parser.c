@@ -44,8 +44,10 @@ error_t run_parser(scanner_t *scanner){
 
             //start of checking which expression i got
             error = parser_analyse(scanner, token); 
+                printf("tu\n"); 
             
             if(error != SUCCESS){
+                
                 printf("chyba %d \n", error);
                 destroy_token(token);
                 return error;
@@ -97,7 +99,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return SYNTAX_ERROR;
             }
         case LEFT_PAR:
-        par_stack_push(p_stack, '(');
+            par_stack_push(p_stack, '(');
             return parser_expression(scanner, token, NULL);
         case NEW_LINE:
             return SUCCESS;
@@ -249,7 +251,7 @@ error_t parser_variable(scanner_t *scanner, token_t *token){
     
 }
 
-error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify){ ///VALUE CAN BE FUNCTION - TO DOO
+error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify){
     bst_node_data_type node_data_type;
     if(can_modify){
         node_data_type = VARIABLE_VAR;
@@ -309,13 +311,14 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
     //next is assignment
     if(parser_assignment(token) == SUCCESS){
         valid_expression = true;
-        error = get_token(scanner, &token);
-        if(error != SUCCESS){
-            return error;
-        }
 
         //checking if we have correct right value
-        error = can_be_variable_value(scanner, tree_node, token);
+        ///////DOLADIT BYLO ZDE CAN VE VARIABLE VALUE
+        ///muze byt nil, jeden vyraz, cela expression, funkce
+        //nil za zavorkou resim v expression previous token predani do funkce
+        variable_type *type_of_variable;
+        (*type_of_variable) = tree_node->variable_type;
+        error = parser_expression(scanner, token, type_of_variable);
         if(error != SUCCESS){
             return error;
         }else{
@@ -437,6 +440,7 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
             }
         }
         if(type_token == EQUALS || type_token == NOT_EQUALS){
+            printf("%dsdd\n", (*type_control));
             switch(token->type){
                 case STRING:
                     if((*type_control) != String){
@@ -458,6 +462,7 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
             }
             return SUCCESS;
         }else{
+
             switch(token->type){
                 case STRING:
                     if((*type_control) != String){
@@ -545,6 +550,24 @@ error_t expression_compose(expression_s **expression_stack, variable_type *expre
     token_type_t token_type;
 
     operand = expression_stack_pop((*expression_stack));
+    if((*expression_stack)->top == -1){
+        switch(operand->type){
+            case IDENTIFIER:
+                id = search_variable_in_all_scopes(stack, operand->data);
+                (*expression_type) = id->variable_type;
+                break;
+            case STRING:
+                (*expression_type) = String;
+                break;
+            case INT:
+                (*expression_type) = Int;
+                break;
+            case DOUBLE:
+                (*expression_type) = Double;
+                break;
+        }
+        return SUCCESS;
+    }
     operator = expression_stack_pop((*expression_stack));
 
     if(operator->type ==  PLUS|| operator->type ==  MINUS|| operator->type ==  MULTIPLY|| operator->type == DIVIDE){
@@ -646,10 +669,13 @@ bool push_or_compose(expression_s **expression_stack, int new_operator_priority)
 error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type){
     error_t error;
     bst_node *variable;
-    variable_type expression_type;
-    variable_type expression_type_par;
+    variable_type *expression_type;
+    variable_type *expression_type_par;
     
-
+    expression_type = (variable_type*)malloc(sizeof(variable_type));
+    expression_type_par = (variable_type*)malloc(sizeof(variable_type));
+    //(*expression_type) = (*control_type);
+    
     //stack for precedence
     expression_s *expression_stack = expression_stack_init();
     int priority = 5;
@@ -657,6 +683,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     //flags for decision what i need from token
     bool want_VarOrLit = true;
     bool want_operator = false;
+    bool at_least_one_operand = false;
 
     //processing expression
     while(true){
@@ -672,12 +699,12 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 return SYNTAX_ERROR;
             }else{
                 par_stack_push(p_stack, '(');
-                error = parser_expression(scanner, token, &expression_type_par);
+                error = parser_expression(scanner, token, expression_type_par);
                 if(error != SUCCESS){
                     return error;
                 }
                 //token simulating type of expression in paranthesis
-                token_t *simulation = init_token(expression_type_par); 
+                token_t *simulation = init_token((*expression_type_par)); 
                 expression_stack_push(expression_stack, simulation);
                 bool want_VarOrLit = false;
                 bool want_operator = true;
@@ -690,14 +717,14 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 return SYNTAX_ERROR;
             }else{
                 if(priority <= 1){
-                    error = expression_compose(&expression_stack, &expression_type);
+                    error = expression_compose(&expression_stack, expression_type);
                     if(error != SUCCESS){
                         return error;
                     }
                     while(true){
                         bool push_comp = push_or_compose(&expression_stack, 1);
                         if(push_comp){
-                            error = expression_compose(&expression_stack, &expression_type);
+                            error = expression_compose(&expression_stack, expression_type);
                             if(error != SUCCESS){
                                 return error;
                             }
@@ -722,14 +749,14 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 return SYNTAX_ERROR;
             }else{
                 if(priority <= 2){
-                    error = expression_compose(&expression_stack, &expression_type);
+                    error = expression_compose(&expression_stack, expression_type);
                     if(error != SUCCESS){
                         return error;
                     }
                     while(true){
                         bool push_comp = push_or_compose(&expression_stack, 2);
                         if(push_comp){
-                            error = expression_compose(&expression_stack, &expression_type);
+                            error = expression_compose(&expression_stack, expression_type);
                             if(error != SUCCESS){
                                 return error;
                             }
@@ -751,19 +778,18 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         ///////////////got == != < <= > >=
         }else if(token->type == EQUALS || token->type == LESS || token->type == MORE ||
                 token->type == MORE_EQUALS || token->type == NOT_EQUALS || token->type == LESS_EQUALS){
-            
             if(!want_operator){
                 return SYNTAX_ERROR;
             }else{
                 if(priority <= 3){
-                    error = expression_compose(&expression_stack, &expression_type);
+                    error = expression_compose(&expression_stack, expression_type);
                     if(error != SUCCESS){
                         return error;
                     }
                     while(true){
                         bool push_comp = push_or_compose(&expression_stack, 3);
                         if(push_comp){
-                            error = expression_compose(&expression_stack, &expression_type);
+                            error = expression_compose(&expression_stack, expression_type);
                             if(error != SUCCESS){
                                 return error;
                             }
@@ -815,14 +841,14 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 return SYNTAX_ERROR;
             }else{
                 if(priority <= 4){
-                    error = expression_compose(&expression_stack, &expression_type);
+                    error = expression_compose(&expression_stack, expression_type);
                     if(error != SUCCESS){
                         return error;
                     }
                     while(true){
                         bool push_comp = push_or_compose(&expression_stack, 4);
                         if(push_comp){
-                            error = expression_compose(&expression_stack, &expression_type);
+                            error = expression_compose(&expression_stack, expression_type);
                             if(error != SUCCESS){
                                 return error;
                             }
@@ -844,6 +870,10 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         ///////////////got IDENTIFIER STRING INT DOUBLE
         }else if(token->type == IDENTIFIER || token->type == STRING ||
                 token->type ==  INT || token->type == DOUBLE){
+                     
+            //control for assignment to variable
+            at_least_one_operand = true;
+            
             if(!want_VarOrLit){
                 return SYNTAX_ERROR;
             }else{
@@ -866,13 +896,17 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             }
         }else{
             if(token->type == RIGHT_PAR || token->type == NEW_LINE){
-                if(token->type == RIGHT_PAR){
-                    par_stack_pop(p_stack);
+                if(at_least_one_operand == false){
+                    return SYNTAX_ERROR;
                 }
+               // if(token->type == RIGHT_PAR){
+                 //   error = par_stack_pop(p_stack);
+                   // if(error != SUCCESS){
+                     //   return error;
+                   // }
+                //}
                 break;
             }else{
-               
-                printf("%d\n", token->type);
                 return SYNTAX_ERROR;
             }
         }
@@ -883,7 +917,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
 
     //pop the expression stack
     while(true){
-        error = expression_compose(&expression_stack, &expression_type);
+        error = expression_compose(&expression_stack, expression_type);
         if(error != SUCCESS){
             return error;
         }
@@ -891,6 +925,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             break;
         }
     }
+    free(expression_type);
+    free(expression_type_par);
     return SUCCESS;   
 }
 
