@@ -189,13 +189,10 @@ void insert_variable_type(bst_node *tree, char *data){
         tree->variable_type = String;
     }else if(strcmp(data, "String?") == 0){
         tree->variable_type = String_nil;
-        insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Int?") == 0){
         tree->variable_type = Int_nil;
-        insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Double?") == 0){
         tree->variable_type = Double_nil;
-        insert_variable_data(&(*tree), "nil"); 
     }    
 }
 

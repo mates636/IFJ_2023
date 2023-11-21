@@ -19,6 +19,7 @@ typedef enum node_data_type {
 
 typedef enum variable_type {
     Not_specified,
+    Nil,
     String,
     Int,
     Double,

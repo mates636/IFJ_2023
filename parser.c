@@ -43,8 +43,8 @@ error_t run_parser(scanner_t *scanner){
             }
 
             //start of checking which expression i got
+            
             error = parser_analyse(scanner, token); 
-                printf("tu\n"); 
             
             if(error != SUCCESS){
                 
@@ -88,7 +88,6 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_variable(scanner, token);
             }else if(strcmp(token->data, "func") == 0){
                 return parser_function(scanner, token);
-            
             /*}else if(token->){
                 return parser_expression(scanner, token);
             }else if(token->data == "func"){
@@ -98,9 +97,6 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             */}else{
                 return SYNTAX_ERROR;
             }
-        case LEFT_PAR:
-            par_stack_push(p_stack, '(');
-            return parser_expression(scanner, token, NULL);
         case NEW_LINE:
             return SUCCESS;
         break;
@@ -128,100 +124,10 @@ error_t parser_colon(token_t *token){
 
 error_t parser_variable_datatype(token_t *token){
     if(token->type == KEYWORD){
-        if(token->data == "String" || token->data == "Double" || token->data == "Int"){
+        if(strcmp(token->data, "String") == 0 || strcmp(token->data, "Int") == 0 || strcmp(token->data, "Double") == 0 || strcmp(token->data, "String?") == 0 || strcmp(token->data, "Int?") == 0 || strcmp(token->data, "Double?") == 0){
             return SUCCESS;
         }else{
             return SYNTAX_ERROR;
-        }
-    }else{
-        return SYNTAX_ERROR;
-    }
-}
-
-error_t can_be_variable_value(scanner_t *scanner, bst_node *tree_node, token_t *token){
-    if( token->type == IDENTIFIER ||
-        token->type == STRING ||
-        token->type == INT ||
-        token->type == DOUBLE || 
-        token->type == LEFT_PAR ||
-        token->type == FUNC_IDENTRIFIER ||
-        token->type == NIL){
-        
-        bst_node *right_variable;
-
-        switch(token->type){
-            case IDENTIFIER:
-                right_variable = search_variable_in_all_scopes(stack, token->data);
-                if(right_variable == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }else{
-                    if(tree_node->variable_type == Not_specified){
-                        tree_node->variable_type = right_variable->variable_type;
-                    }
-                    if(right_variable->variable_type != tree_node->variable_type){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }else{
-                        sym_t_variable *variable = (sym_t_variable*)right_variable->data;
-                        insert_variable_data(tree_node, variable->data);
-                        return SUCCESS;
-                    }
-                }
-            case LEFT_PAR:
-
-            case FUNC_IDENTRIFIER:
-
-            case STRING:
-                if( tree_node->variable_type == String ||
-                    tree_node->variable_type == String_nil ||
-                    tree_node->variable_type == Not_specified){
-                    
-                    insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == Not_specified){
-                        tree_node->variable_type = String;
-                    }
-                    return SUCCESS;
-                }else{
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-            case INT:
-                if( tree_node->variable_type == Int ||
-                    tree_node->variable_type == Int_nil ||
-                    tree_node->variable_type == Not_specified){
-                    
-                    insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == Not_specified){
-                        tree_node->variable_type = Int;
-                    }
-                    return SUCCESS;
-                }else{
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-            case DOUBLE:
-                if( tree_node->variable_type == Double ||
-                    tree_node->variable_type == Double_nil ||
-                    tree_node->variable_type == Not_specified){
-                    
-                    insert_variable_data(tree_node, token->data);
-                    if(tree_node->variable_type == Not_specified){
-                        tree_node->variable_type = Double;
-                    }
-                    return SUCCESS;
-                }else{
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-            case NIL:
-                if(tree_node->variable_type == Not_specified){
-                    return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
-                }
-                else if(tree_node->variable_type == Int_nil ||
-                    tree_node->variable_type == Double_nil ||
-                    tree_node->variable_type == String_nil){
-                    
-                    insert_variable_data(tree_node, token->data);
-                    return SUCCESS;
-                }else{
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
         }
     }else{
         return SYNTAX_ERROR;
@@ -246,12 +152,14 @@ error_t parser_variable(scanner_t *scanner, token_t *token){
     if(token->type == IDENTIFIER){
         return parser_variable_identifier(scanner, token, can_modify);
     }else{
+
         return SYNTAX_ERROR;
     }
     
 }
 
 error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify){
+    error_t error;
     bst_node_data_type node_data_type;
     if(can_modify){
         node_data_type = VARIABLE_VAR;
@@ -263,12 +171,17 @@ error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_
     bst_node *identifier = bst_search(current_scope(stack), token->data);
     if(identifier == NULL){
         //we can insert new node with key of the variable
+        identifier = current_scope(stack);
         bst_insert(&identifier, token->data, node_data_type);
+        identifier = bst_search(identifier, token->data);
     }else{
         return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
     }
 
-    parser_variable_type_and_data(scanner, token, identifier);
+    error = parser_variable_type_and_data(scanner, token, identifier);
+    if(error != SUCCESS){
+        return error;
+    }
 }
 
 error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_node *tree_node){
@@ -307,18 +220,60 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
             return SUCCESS;
         }
     }
+    
+    //there is no data type 
+    if(valid_expression == false){
+        tree_node->variable_type = Not_specified;
+    }
 
     //next is assignment
     if(parser_assignment(token) == SUCCESS){
         valid_expression = true;
 
-        //checking if we have correct right value
-        ///////DOLADIT BYLO ZDE CAN VE VARIABLE VALUE
-        ///muze byt nil, jeden vyraz, cela expression, funkce
-        //nil za zavorkou resim v expression previous token predani do funkce
-        variable_type *type_of_variable;
-        (*type_of_variable) = tree_node->variable_type;
+        variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
         error = parser_expression(scanner, token, type_of_variable);
+        if(error != SUCCESS){
+            return error;
+        }
+
+        if(tree_node->variable_type == Not_specified){
+            if((*type_of_variable) == Nil){
+                return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+            }
+            tree_node->variable_type = (*type_of_variable);    
+        }else{
+            //control if var type and expression type are same
+            if(tree_node->variable_type == Int_nil || tree_node->variable_type == Double_nil || tree_node->variable_type == String_nil){
+                if(tree_node->variable_type == Int_nil && ((*type_of_variable) != Int || (*type_of_variable) != Int_nil)){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }else if(tree_node->variable_type == Double_nil && ((*type_of_variable) == String || (*type_of_variable) == String_nil)){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }else if(tree_node->variable_type == String_nil && ((*type_of_variable) != String || (*type_of_variable) != String_nil)){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+            }
+            if(tree_node->variable_type == Int || tree_node->variable_type == Double || tree_node->variable_type == String){
+                if(tree_node->variable_type == Double){
+                    if((*type_of_variable) == String){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                }else{
+                    if(tree_node->variable_type != (*type_of_variable)){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                }
+            }
+        }
+        ////////TO DO ONLY SIMULATION OF DATA TO VARIABLE
+            if((*type_of_variable) == String || (*type_of_variable) == String){
+                insert_variable_data(tree_node, "simulation");
+            }else if((*type_of_variable) == Int || (*type_of_variable) == Int_nil){
+                insert_variable_data(tree_node, "111");
+            }else if((*type_of_variable) == Double || (*type_of_variable) == Double_nil){
+                insert_variable_data(tree_node, "111.1");
+            }
+        free(type_of_variable);
+        
         if(error != SUCCESS){
             return error;
         }else{
@@ -338,6 +293,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 ///////////////////////////HELP FUNCTIONS - EXPRESSION////////////////////////
 error_t parser_expression_type_control_first_value(token_t *token, variable_type *type_control){
     bst_node *id; 
+    
     switch(token->type){
             case IDENTIFIER:
                 id = search_variable_in_all_scopes(stack, token->data);
@@ -348,13 +304,19 @@ error_t parser_expression_type_control_first_value(token_t *token, variable_type
                         return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                     }
                 }
-                (*type_control) = id->variable_type;
-                if((*type_control) == String_nil || (*type_control) == Int_nil || (*type_control) == Double_nil){
-                   return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL; 
+                if(strcmp(id->data, "nil") == 0){
+                    (*type_control) = Nil;
+                }else{
+                    (*type_control) = id->variable_type;
                 }
                 return SUCCESS;
-            case NIL:
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL; 
+            case KEYWORD:
+                if(strcmp(token->data, "nil") == 0){
+                    (*type_control) = Nil;
+                    return SUCCESS;
+                }else{
+                    return SYNTAX_ERROR;
+                }
             case STRING:
                 (*type_control) = String;
                 return SUCCESS; 
@@ -363,6 +325,15 @@ error_t parser_expression_type_control_first_value(token_t *token, variable_type
                 return SUCCESS; 
             case DOUBLE:
                 (*type_control) = Double;
+                return SUCCESS;
+            case DOUBLE_NIL:
+                (*type_control) = Double_nil;
+                return SUCCESS;
+            case INT_NIL:
+                (*type_control) = Int_nil;
+                return SUCCESS;
+            case STRING_NIL:
+                (*type_control) = String_nil;
                 return SUCCESS; 
         }
 }
@@ -376,6 +347,10 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
         return parser_expression_type_control_first_value(token, type_control);
     //other values in expression - checking types validity
     }else{
+        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
+            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+        }
+
         token_t *tmp = token;
         if(tmp->type == IDENTIFIER){
             id = search_variable_in_all_scopes(stack, token->data);
@@ -411,6 +386,9 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }
                 break;
+            default:
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                break;
         }
         return SUCCESS;
     }
@@ -424,6 +402,10 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
         return parser_expression_type_control_first_value(token, type_control);
     //other values in expression - checking types validity
     }else{
+        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
+            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+        }
+
         if(token->type == IDENTIFIER){
             id = search_variable_in_all_scopes(stack, token->data);
             if(id == NULL){
@@ -459,6 +441,9 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
                         return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                     }
                     break;
+                default:
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    break;
             }
             return SUCCESS;
         }else{
@@ -478,6 +463,9 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
                     if((*type_control) != Int){
                         return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                     }
+                    break;
+                default:
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                     break;
             }   
             return SUCCESS;
@@ -555,15 +543,23 @@ error_t expression_compose(expression_s **expression_stack, variable_type *expre
             case IDENTIFIER:
                 id = search_variable_in_all_scopes(stack, operand->data);
                 (*expression_type) = id->variable_type;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
                 break;
             case STRING:
                 (*expression_type) = String;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
                 break;
             case INT:
                 (*expression_type) = Int;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
                 break;
             case DOUBLE:
                 (*expression_type) = Double;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
                 break;
         }
         return SUCCESS;
@@ -674,7 +670,6 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     
     expression_type = (variable_type*)malloc(sizeof(variable_type));
     expression_type_par = (variable_type*)malloc(sizeof(variable_type));
-    //(*expression_type) = (*control_type);
     
     //stack for precedence
     expression_s *expression_stack = expression_stack_init();
@@ -698,16 +693,44 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             if(!want_VarOrLit){
                 return SYNTAX_ERROR;
             }else{
+                at_least_one_operand = true;
+
                 par_stack_push(p_stack, '(');
                 error = parser_expression(scanner, token, expression_type_par);
                 if(error != SUCCESS){
                     return error;
                 }
                 //token simulating type of expression in paranthesis
-                token_t *simulation = init_token((*expression_type_par)); 
+                token_type_t type_for_sim_token;
+                switch((*expression_type_par)){
+                        case Nil:
+                            type_for_sim_token = NIL;
+                            break;
+                        case String:
+                            type_for_sim_token = STRING;
+                            break;
+                        case String_nil:
+                            type_for_sim_token = STRING_NIL;
+                            break;
+                        case Int:
+                            type_for_sim_token = INT;
+                            break;
+                        case Int_nil:
+                            type_for_sim_token = INT_NIL;
+                            break;
+                        case Double:
+                            type_for_sim_token = DOUBLE;
+                            break;
+                        case Double_nil:
+                            type_for_sim_token = DOUBLE_NIL;
+                            break;
+                    }
+                token_t *simulation = init_token(type_for_sim_token); 
                 expression_stack_push(expression_stack, simulation);
-                bool want_VarOrLit = false;
-                bool want_operator = true;
+                free(simulation);
+
+                want_VarOrLit = false;
+                want_operator = true;
             }
 
         ///////////////got * / 
@@ -811,6 +834,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
 
         ///////////////got !
         }else if(token->type == EXCLAMATION){
+            
             if(!want_operator){
                 return SYNTAX_ERROR;
             }else{
@@ -895,6 +919,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 want_operator = true;          
             }
         }else{
+
             if(token->type == RIGHT_PAR || token->type == NEW_LINE){
                 if(at_least_one_operand == false){
                     return SYNTAX_ERROR;
@@ -904,29 +929,39 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     if(error != SUCCESS){
                        return error;
                     }
+                    want_VarOrLit = false;
+                    want_operator = true;
                 }
                 break;
+                
             }else{
                 return SYNTAX_ERROR;
             }
         }
     }//while
+    
     if(want_VarOrLit == true){
         return SYNTAX_ERROR;
     }  
-
     //pop the expression stack
     while(true){
         error = expression_compose(&expression_stack, expression_type);
+
         if(error != SUCCESS){
             return error;
         }
         if(expression_stack->top == 0){
             break;
         }
+    }   
+    
+    variable_type type_to_pass = (*expression_type);
+    if(control_type != NULL){
+        (*control_type) = type_to_pass;
     }
     free(expression_type);
     free(expression_type_par);
+    
     return SUCCESS;   
 }
 
@@ -1073,7 +1108,6 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
 error_t parser_if(scanner_t *scanner, token_t* token){
     error_t error;
     error = get_token(scanner, &token);
-    if
 }
 
 #endif
