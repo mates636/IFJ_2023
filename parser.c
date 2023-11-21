@@ -23,7 +23,8 @@ void free_parser(){
 error_t run_parser(scanner_t *scanner){
     token_t *token;
     error_t error;
-
+    //musim inicializovat globalni scope
+    scope_stack_push(stack);
     while(true){
         //checking if i didn't start next expression in expression before
         if(next_token == NULL){
@@ -87,6 +88,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_variable(scanner, token);
             }else if(strcmp(token->data, "func") == 0){
                 return parser_function(scanner, token);
+            
             /*}else if(token->){
                 return parser_expression(scanner, token);
             }else if(token->data == "func"){
@@ -101,6 +103,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             return parser_expression(scanner, token, NULL);
         case NEW_LINE:
             return SUCCESS;
+        break;
         default:
             return SYNTAX_ERROR;
     }
@@ -940,7 +943,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     }
 
 
-    bst_node *identifier = bst_search(current_scope(stack), token->data);
+    bst_node *identifier = bst_search(stack->stack_array[0], token->data);
     if(identifier != NULL){
         printf("definovany\n");
         return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR; //TODO
@@ -958,7 +961,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     error = parser_argument(scanner, token, function);
 
     if(error != SUCCESS){
-        return SYNTAX_ERROR;
+        return error;
     }
 
     //kontrola navratoveho typu
@@ -970,14 +973,18 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
-
+    bst_print(stack->stack_array[0]);
+    printf("function id: %s\n", function->id);
+    printf("stack top %d\n", stack->top);
+    printf("tree node address %p\n", stack->stack_array[0]);
     return SUCCESS;
 }
 
 error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
     sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
- 
+    bst_node* arg_tree;
+    bst_init(&arg_tree);
 
     error = get_token(scanner, &token);
     if(token->type != RIGHT_PAR){
@@ -993,11 +1000,14 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
 
         struktura->params[struktura->num_params].param_name = malloc(strlen(token->data) + 1);
         strcpy(struktura->params->param_name, token->data);
-
         error = get_token(scanner, &token);
         if(token->type != IDENTIFIER){
             return SYNTAX_ERROR;
         }
+        if(bst_search(arg_tree, token->data) != NULL){
+            return SEMANTIC_ERROR_OTHERS;
+        }
+        bst_insert(&arg_tree, token->data, FUNCTION);
 
         struktura->params[struktura->num_params].param_id = malloc(strlen(token->data) + 1);
         strcpy(struktura->params->param_id, token->data);
@@ -1033,6 +1043,7 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
     }
 
     }
+    bst_dispose(&arg_tree);
     return SUCCESS;
 }
 
@@ -1059,5 +1070,10 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
     return SUCCESS;
 }
 
+error_t parser_if(scanner_t *scanner, token_t* token){
+    error_t error;
+    error = get_token(scanner, &token);
+    if
+}
 
 #endif

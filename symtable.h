@@ -41,6 +41,8 @@ bst_node *bst_search(bst_node *tree, char *key);
 bst_node *search_variable_in_all_scopes();
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
 void bst_dispose(bst_node **tree);
+void bst_print(bst_node *tree);
+char* string_copy(char *src);
 
 
 //stack for scope

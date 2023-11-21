@@ -7,6 +7,7 @@
 //BST functions
 void bst_init(bst_node **tree){
     (*tree) = NULL;
+    bst_insert(tree, "~root", FUNCTION);
 }
 
 bst_node *bst_search(bst_node *tree, char *key){
@@ -44,7 +45,8 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
 
     if((*tree) == NULL){
         bst_node *new_node = (bst_node*)malloc(sizeof(struct bst_node));
-        new_node->key = key;
+        new_node->key = string_copy(key);
+        //new_node->key = key;
         new_node->data = NULL;
         new_node->variable_type = Not_specified;
         new_node->node_data_type = data_type;
@@ -61,7 +63,7 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
             tmp = tmp->left_child;
         if(tmp == NULL){
             bst_node *new_node = malloc(sizeof(struct bst_node));
-            new_node->key = key;
+            new_node->key = string_copy(key);
             new_node->data = NULL;
             new_node->variable_type = Not_specified;
             new_node->node_data_type = data_type;
@@ -74,7 +76,8 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
         tmp = tmp->right_child;
         if(tmp == NULL){
             bst_node *new_node = malloc(sizeof(struct bst_node));
-            new_node->key = key;
+            new_node->key = string_copy(key);
+            //new_node->key = key;
             new_node->data = NULL;
             new_node->variable_type = Not_specified;
             new_node->node_data_type = data_type;
@@ -89,6 +92,16 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type){
   }
 }
 
+void bst_print(bst_node *tree){
+    if(tree == NULL){
+        return;
+    } else {
+        bst_print(tree->left_child);
+        printf("key: %s\n",tree->key);
+        bst_print(tree->right_child);
+    }
+}
+
 void bst_dispose(bst_node **tree){
     if((*tree) == NULL){
         return;
@@ -97,6 +110,7 @@ void bst_dispose(bst_node **tree){
             free(((sym_t_variable *)(*tree)->data)->data);
             free((*tree)->data);
         }
+        free((*tree)->key);
         bst_dispose(&(*tree)->left_child);
         bst_dispose(&(*tree)->right_child);
         free(*tree);
@@ -104,6 +118,12 @@ void bst_dispose(bst_node **tree){
     }
 
 
+}
+
+char* string_copy(char *src){
+    char* dst = malloc(strlen(src) + 1);
+    strcpy(dst, src);
+    return dst;
 }
 
 
