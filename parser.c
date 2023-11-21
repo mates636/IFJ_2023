@@ -896,12 +896,12 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 if(at_least_one_operand == false){
                     return SYNTAX_ERROR;
                 }
-               // if(token->type == RIGHT_PAR){
-                 //   error = par_stack_pop(p_stack);
-                   // if(error != SUCCESS){
-                     //   return error;
-                   // }
-                //}
+                if(token->type == RIGHT_PAR){
+                    error = par_stack_pop(p_stack);
+                    if(error != SUCCESS){
+                       return error;
+                    }
+                }
                 break;
             }else{
                 return SYNTAX_ERROR;
