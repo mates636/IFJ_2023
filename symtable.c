@@ -189,13 +189,10 @@ void insert_variable_type(bst_node *tree, char *data){
         tree->variable_type = String;
     }else if(strcmp(data, "String?") == 0){
         tree->variable_type = String_nil;
-        insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Int?") == 0){
         tree->variable_type = Int_nil;
-        insert_variable_data(&(*tree), "nil");
     }else if(strcmp(data, "Double?") == 0){
         tree->variable_type = Double_nil;
-        insert_variable_data(&(*tree), "nil"); 
     }    
 }
 
@@ -226,17 +223,21 @@ void insert_function(bst_node **tree, char *key, sym_t_function *data){
 //stack for paranthesis and brackets
 par_stack *par_stack_init(){
     par_stack *stack = (par_stack*)malloc(sizeof(par_stack));
-    stack->top = 0;
+    stack->top = -1;
     return stack;
 }
 
 void par_stack_push(par_stack *par_stack, char c){
-    par_stack->par_stack_array[par_stack->top] = c;
     par_stack->top = par_stack->top + 1;
+    par_stack->par_stack_array[par_stack->top] = c;
 }
 
 error_t par_stack_pop(par_stack *par_stack){
+    if(par_stack->top == -1){
+        return SYNTAX_ERROR;
+    }
     par_stack->top = par_stack->top - 1;
+    return SUCCESS;
 }
 bool par_stack_is_empty(par_stack *par_stack){
     if(par_stack->top == 0){
