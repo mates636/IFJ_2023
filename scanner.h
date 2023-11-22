@@ -13,6 +13,9 @@ typedef enum token_type_t{
     IDENTIFIER,
     FUNC_IDENTRIFIER,//TODO
     NIL,//TODO
+    STRING_NIL,
+    INT_NIL,
+    DOUBLE_NIL,
     SEMICOLON,  //;
     LEFT_PAR,   //(
     RIGHT_PAR,  //)
