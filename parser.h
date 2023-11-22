@@ -22,7 +22,8 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type);
 error_t parser_function(scanner_t *scanner, token_t *token);
 error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *struktura);
-
+error_t parser_return(scanner_t *scanner, token_t *token);
+error_t parser_function_call(scanner_t *scanner, token_t *token);
 //error_t parser_function();
 //error_t parser_if_statement();
 //error_t parser_while_statement();

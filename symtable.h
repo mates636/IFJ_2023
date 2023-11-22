@@ -24,7 +24,8 @@ typedef enum variable_type {
     Double,
     String_nil,
     Int_nil,
-    Double_nil
+    Double_nil,
+    Void
 }variable_type;
 
 typedef struct bst_node {

@@ -44,7 +44,7 @@ error_t run_parser(scanner_t *scanner){
 
             //start of checking which expression i got
             error = parser_analyse(scanner, token); 
-                printf("tu\n"); 
+                // printf("tu\n"); 
             
             if(error != SUCCESS){
                 
@@ -103,7 +103,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             return parser_expression(scanner, token, NULL);
         case NEW_LINE:
             return SUCCESS;
-        break;
+        case IDENTIFIER:
+            return parser_function_call(scanner, token);
         default:
             return SYNTAX_ERROR;
     }
@@ -965,11 +966,10 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     }
 
     //kontrola navratoveho typu
-    error = parser_return_type(scanner,token, function);
+    error = parser_return_type(scanner, token, function);
     if(error != SUCCESS){
-        return SYNTAX_ERROR;
+        return error;
     }
-
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
@@ -977,6 +977,21 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     printf("function id: %s\n", function->id);
     printf("stack top %d\n", stack->top);
     printf("tree node address %p\n", stack->stack_array[0]);
+    //vyhodnoceni tela funkce
+    // error = parser_return(scanner, token);
+    // printf("dfas\n");
+    error = get_token(scanner, &token);
+    if(token->type != KEYWORD){
+        // if(token->data != 'return'){
+            // return SYNTAX_ERROR;
+        // }
+        return SYNTAX_ERROR;
+    }
+
+    error = get_token(scanner, &token);
+    if(token->type != RIGHT_BR){
+        return SYNTAX_ERROR;
+    }
     return SUCCESS;
 }
 
@@ -1052,28 +1067,83 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
     
     error = get_token(scanner, &token);
     if(token->type != RETURN_TYPE){
-        return SYNTAX_ERROR;
-    }
-    
-    error = get_token(scanner, &token);
-    if(token->type != KEYWORD){
-        return SYNTAX_ERROR;
-    }
+        struktura->return_type = Void;
+        // printf("typ: %d\n", struktura->return_type);
+        // return SYNTAX_ERROR;
+        // return SUCCESS;
+    } else {
+        
+        error = get_token(scanner, &token);
+        if(token->type != KEYWORD){
+            return SYNTAX_ERROR;
+        }
 
-    variable_type variable = find_variable_type(token->data);
-    struktura->return_type = variable;
+        variable_type variable = find_variable_type(token->data);
+        struktura->return_type = variable;
 
-    error = get_token(scanner, &token);
-    if(token->type != LEFT_BR){
-        return SYNTAX_ERROR;
+        error = get_token(scanner, &token);
+        if(token->type != LEFT_BR){
+            return SYNTAX_ERROR;
+        }
     }
     return SUCCESS;
 }
 
-error_t parser_if(scanner_t *scanner, token_t* token){
+error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
+    
     error = get_token(scanner, &token);
-    if
+    if(token->data != "return"){
+        return SYNTAX_ERROR;
+    }
+    error = get_token(scanner, &token);
+    if(token->type != RIGHT_BR){
+        return SYNTAX_ERROR;
+    }
+    //TODO
+    //zavolame vyhodnoceni vyrazu
+    return SUCCESS;
 }
+
+error_t parser_function_call(scanner_t *scanner, token_t *token){
+    error_t error;
+
+    error = get_token(scanner, &token);
+    if(token->type != LEFT_PAR){
+        return SYNTAX_ERROR;
+    }
+    error = get_token(scanner, &token);
+    if(token->type != RIGHT_PAR){
+        while (1)
+        {
+            if(token->type == IDENTIFIER){
+                error = get_token(scanner, &token);
+                if(token->type == COLON){
+                    error = get_token(scanner, &token);
+                    if(token->type != STRING){
+                        // return SUCCESS;
+                        return SYNTAX_ERROR;
+                    }
+                }else if(token->type == COMMA){
+                    // return SUCCESS;
+                }else{
+                    return SUCCESS;
+                }
+            }
+            
+            error = get_token(scanner, &token);
+            if(token->type == RIGHT_PAR){
+                break;
+            }
+        }
+        
+    }
+
+      return SUCCESS;
+
+    }
+    
+
+
 
 #endif

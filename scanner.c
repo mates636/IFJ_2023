@@ -238,8 +238,10 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_digit(next_char)){
                     scanner->rewind = next_char;
                     scanner->state = S_DOUBLE;
-                }else if(is_digit(next_char) != 1){
-                    return LEXICAL_ERROR;
+                // }else if(is_digit(next_char) != 1){
+                // printf("cisloasd2 %c\n", next_char);
+
+                //     return LEXICAL_ERROR;
                 }else{
                     scanner->state = S_INIT;
                     *token = init_token_data(DOUBLE, scanner->buffer, scanner->buffer_pos);
@@ -301,7 +303,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         return LEXICAL_ERROR;
                     }
                 } else{
-                    if(strncmp(scanner->buffer, "_", scanner->buffer_pos) == 0){
+                    if(strcmp(scanner->buffer, "_") == 0){
                         scanner->state = S_INIT;
                         *token = init_token_data(NO_TYPE, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
@@ -319,6 +321,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
                         scanner->buffer_pos = 0;
+                        
                         return SUCCESS;
                     }
                 }
@@ -486,7 +489,7 @@ bool is_keyword(scanner_t* scanner){
     int keywords_number = sizeof(keywords) / sizeof(keywords[0]);
 
     for(int i = 0; i < keywords_number; i++){
-        if(strncmp(scanner->buffer, keywords[i], scanner->buffer_pos) == 0){
+        if(strcmp(scanner->buffer, keywords[i]) == 0){ //, scanner->buffer_pos
             return true;
         }
     }
@@ -495,5 +498,6 @@ bool is_keyword(scanner_t* scanner){
 
 void add_char(char c, scanner_t* scanner){
     scanner->buffer[scanner->buffer_pos] = c;
+    scanner->buffer[scanner->buffer_pos + 1] = 0;
     scanner->buffer_pos += 1;
 }
