@@ -14,7 +14,8 @@
 typedef enum node_data_type {
     FUNCTION,
     VARIABLE_LET,
-    VARIABLE_VAR
+    VARIABLE_VAR,
+    FUNCTION_PARAM
 }bst_node_data_type;
 
 typedef enum variable_type {

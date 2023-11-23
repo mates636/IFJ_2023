@@ -229,7 +229,7 @@ variable_type find_variable_type(char *data){
 void insert_function(bst_node **tree, char *key, sym_t_function *data){
     bst_insert(tree, key, FUNCTION);
     bst_node *fun_node = bst_search(*tree, key);
-    fun_node->data = data;
+    fun_node->data = (sym_t_function *)data;
 }
 
 
