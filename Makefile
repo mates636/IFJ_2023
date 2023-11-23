@@ -5,6 +5,7 @@ all: test_scanner test_parser
 test_scanner: $(SCANNER_FILES)
 	gcc -g -o test_scanner $(SCANNER_FILES)
 
+all: test_scanner test_parser
 
 PARSER_FILES := parser.c parser.h scanner.c scanner.h test_parser.c symtable.c
 test_parser: $(PARSER_FILES)

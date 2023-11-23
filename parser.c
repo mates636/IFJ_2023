@@ -73,19 +73,20 @@ error_t run_parser(scanner_t *scanner){
                 destroy_token(token);
                 return error;
             }
-
             //we were in if or while or func body
             if(token->type == RIGHT_BR){
+                
                 //end of local scope
                 error = scope_stack_pop(stack);
                 if(error != SUCCESS){
                     return error;
                 }
-
                 //search for }
                 if(p_stack->par_stack_array[p_stack->top] != '{'){
                     return SYNTAX_ERROR;
                 }
+                printf("sdf\n");
+
                 error = par_stack_pop(p_stack);
                 if(error != SUCCESS){
                     return error;
@@ -182,9 +183,11 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
         case EOF_TYPE:
             return SUCCESS;         
         case IDENTIFIER:
-            char *func_name = string_copy(token->data);
+            func_name = string_copy(token->data);
             //todo free
-            error_t error = get_token(scanner, &token);
+            // error_t error;
+
+            error = get_token(scanner, &token);
             if(token->type == LEFT_PAR){
                 return parser_function_call(scanner, func_name, Not_specified);
             }else{
@@ -1225,6 +1228,17 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     //vyhodnoceni tela funkce
     // error = parser_return(scanner, token);
     // printf("dfas\n");
+    scope_stack_push(stack);
+
+    error = run_parser(scanner);
+    if(error != SUCCESS){
+        return error;
+    }
+
+    scope_stack_pop(stack);
+
+    
+
     return SUCCESS;
 }
 
@@ -1331,6 +1345,8 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
             return SYNTAX_ERROR;
         }
     }
+    par_stack_push(p_stack, '{');
+
     return SUCCESS;
 }
 
