@@ -85,7 +85,6 @@ error_t run_parser(scanner_t *scanner){
                 if(p_stack->par_stack_array[p_stack->top] != '{'){
                     return SYNTAX_ERROR;
                 }
-                printf("sdf\n");
 
                 error = par_stack_pop(p_stack);
                 if(error != SUCCESS){
@@ -1506,9 +1505,9 @@ error_t fun_calls_handler(){
         if(node->node_data_type != FUNCTION){
             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
+        
         sym_t_function *node_fun = node->data;
         if(node_fun->num_params != fun_calls[i].num_params){
-            //todo
             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
         for(int j = 0; j < fun_calls[i].num_params; j++){
