@@ -97,7 +97,7 @@ void bst_print(bst_node *tree){
         return;
     } else {
         bst_print(tree->left_child);
-        printf("key: %s\n",tree->key);
+        // printf("key: %s\n",tree->key);
         bst_print(tree->right_child);
     }
 }

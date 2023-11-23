@@ -3,6 +3,7 @@
 
 #ifndef PARSER_C
 #define PARSER_C 
+#define CHECKERROR(error) if ((error) != 0) return error; 
 
 scope_stack *stack;//symtable
 par_stack *p_stack;
@@ -56,7 +57,7 @@ void free_parser(){
 }
 
 
-
+    
 error_t run_parser(scanner_t *scanner){
     token_t *token;
     error_t error;
@@ -110,10 +111,10 @@ error_t run_parser(scanner_t *scanner){
             destroy_token(next_token);
         }
     }
-    print_funcall();
+    //print_funcall();
     error = fun_calls_handler();
     if(error != SUCCESS){
-        printf("chyba funcall %d \n", error);
+        // printf("chyba funcall %d \n", error);
         return error;
     }
     printf("succes\n");
@@ -143,11 +144,12 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             }
         case NEW_LINE:
             return SUCCESS;
+        case COMMENT:
+            return SUCCESS;
         case IDENTIFIER:
             char* func_name = string_copy(token->data);
-            //todo free
+            //todo free idk
             error_t error = get_token(scanner, &token);
-            printf("%d\n", token->type);
             if(token->type == LEFT_PAR){
                 return parser_function_call(scanner, func_name, Not_specified);
             }
@@ -1024,6 +1026,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
     
     error = get_token(scanner, &token);
+    CHECKERROR(error)
     if(token->type  != IDENTIFIER){
         return SYNTAX_ERROR;
     }
@@ -1031,7 +1034,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
     bst_node *identifier = bst_search(stack->stack_array[0], token->data);
     if(identifier != NULL){
-        printf("definovany\n");
+        // printf("definovany\n");
         return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR; //TODO
     }
     function->id = malloc(strlen(token->data) + 1);
@@ -1039,6 +1042,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
 
     error = get_token(scanner, &token);
+    CHECKERROR(error)
     if(token->type != LEFT_PAR){
         return SYNTAX_ERROR;
     }
@@ -1058,26 +1062,14 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
-    printf("inserted address %p\n", function);
+    // printf("inserted address %p\n", function);
     bst_print(stack->stack_array[0]);
-    printf("function id: %s\n", function->id);
-    printf("stack top %d\n", stack->top);
-    printf("tree node address %p\n", stack->stack_array[0]);
+    // printf("function id: %s\n", function->id);
+    // printf("stack top %d\n", stack->top);
+    // printf("tree node address %p\n", stack->stack_array[0]);
     //vyhodnoceni tela funkce
     // error = parser_return(scanner, token);
     // printf("dfas\n");
-    error = get_token(scanner, &token);
-    if(token->type != KEYWORD){
-        // if(token->data != 'return'){
-            // return SYNTAX_ERROR;
-        // }
-        return SYNTAX_ERROR;
-    }
-
-    error = get_token(scanner, &token);
-    if(token->type != RIGHT_BR){
-        return SYNTAX_ERROR;
-    }
     return SUCCESS;
 }
 
@@ -1087,6 +1079,8 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
     bst_init(&arg_tree);
 
     error = get_token(scanner, &token);
+    CHECKERROR(error)
+
     if(token->type != RIGHT_PAR){
     while(1){
         if(struktura->num_params == 0){
@@ -1101,6 +1095,8 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         struktura->params[struktura->num_params].param_name = malloc(strlen(token->data) + 1);
         strcpy(struktura->params->param_name, token->data);
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type != IDENTIFIER){
             return SYNTAX_ERROR;
         }
@@ -1113,10 +1109,14 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         strcpy(struktura->params->param_id, token->data);
 
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type != COLON){
             return SYNTAX_ERROR;
         }
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type != KEYWORD){
             return SYNTAX_ERROR;
         }
@@ -1129,10 +1129,12 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         struktura->num_params += 1;
 
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type == COMMA){
-            // printf("mam carku\n");
-            //pocet argumentu vice nez 1
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
 
         } else if(token->type == RIGHT_PAR){
             break;
@@ -1151,14 +1153,15 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
     error_t error;
     
     error = get_token(scanner, &token);
+    CHECKERROR(error)
+
     if(token->type != RETURN_TYPE){
         struktura->return_type = Void;
-        // printf("typ: %d\n", struktura->return_type);
-        // return SYNTAX_ERROR;
-        // return SUCCESS;
     } else {
         
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type != KEYWORD){
             return SYNTAX_ERROR;
         }
@@ -1167,6 +1170,8 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
         struktura->return_type = variable;
 
         error = get_token(scanner, &token);
+        CHECKERROR(error)
+
         if(token->type != LEFT_BR){
             return SYNTAX_ERROR;
         }
@@ -1178,10 +1183,14 @@ error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
     
     error = get_token(scanner, &token);
+    CHECKERROR(error)
+
     if(token->data != "return"){
         return SYNTAX_ERROR;
     }
     error = get_token(scanner, &token);
+    CHECKERROR(error)
+
     if(token->type != RIGHT_BR){
         return SYNTAX_ERROR;
     }
@@ -1192,7 +1201,6 @@ error_t parser_return(scanner_t *scanner, token_t *token){
  // if(error != 0){
 //     return error;
 // }
-#define CHECKERROR(error) if ((error) != 0) return error; 
 
 error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type required_return_type){
     error_t error;
@@ -1237,11 +1245,11 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
                             } else if(token->type == IDENTIFIER){
                                 bst_node *id = search_variable_in_all_scopes(stack, token->data);
                                 if(id == NULL){
-                                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                                    return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                                 }
                                 if(id->node_data_type == FUNCTION){
                                     //todo error
-                                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                                    return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                                 }
                                 vartype = id->variable_type;
                             }
@@ -1254,11 +1262,11 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
                     } else {
                         bst_node *id = search_variable_in_all_scopes(stack, first_param_token);
                         if(id == NULL){
-                            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                         }
                         if(id->node_data_type == FUNCTION){
                             //todo error
-                            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                         }
                         free(first_param_token);
 
@@ -1325,31 +1333,30 @@ error_t fun_calls_handler(){
             return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
         }
         if(node->node_data_type != FUNCTION){
-            return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
         sym_t_function *node_fun = node->data;
         if(node_fun->num_params != fun_calls[i].num_params){
             //todo
-            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
-        printf("a\n");
         for(int j = 0; j < fun_calls[i].num_params; j++){
             if(fun_calls[i].params[j].param_name != NULL){
                 if(strcmp(node_fun->params[j].param_name, fun_calls[i].params[j].param_name) != 0){
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                 }
             }else {
                 if(strcmp(node_fun->params[j].param_name, "_") != 0){
-                    return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+                    return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                 }
             }
             if(!check_type_compatibility(node_fun->params[j].param_type, fun_calls[i].params[j].param_type)){
-                return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
             }
         }
-        printf("return type call: %s, def: %s\n", variable_type_to_str(fun_calls[i].return_type), variable_type_to_str(node_fun->return_type));
+        // printf("return type call: %s, def: %s\n", variable_type_to_str(fun_calls[i].return_type), variable_type_to_str(node_fun->return_type));
         if(!check_type_compatibility(fun_calls[i].return_type, node_fun->return_type)){
-            return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
     }
     return SUCCESS;

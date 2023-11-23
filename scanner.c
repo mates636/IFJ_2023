@@ -501,3 +501,4 @@ void add_char(char c, scanner_t* scanner){
     scanner->buffer[scanner->buffer_pos + 1] = 0;
     scanner->buffer_pos += 1;
 }
+
