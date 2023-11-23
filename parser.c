@@ -6,6 +6,37 @@
 
 scope_stack *stack;//symtable
 par_stack *p_stack;
+sym_t_function *fun_calls;
+int fun_calls_num;
+
+void add_fun_call(sym_t_function *funcall){
+    if(fun_calls_num == 0){
+        fun_calls = malloc(sizeof(sym_t_function));
+    }else{
+        fun_calls = realloc(fun_calls, sizeof(sym_t_function) * (fun_calls_num + 1));
+    }
+    fun_calls[fun_calls_num] = *funcall;
+    fun_calls_num += 1;
+}
+
+void dispose_funcalls(){
+    for(int i = 0; i < fun_calls_num; i++){
+        sym_t_function *fun = &fun_calls[i];
+        free(fun->id);
+
+        for(int j = 0; j < fun->num_params; j++){
+            free(fun->params[j].param_name);
+            free(fun->params[j].param_id);
+        }
+        if(fun->num_params != 0){
+            free(fun->params);
+        }
+    }
+    if(fun_calls_num != 0){
+        free(fun_calls);
+    }
+    fun_calls_num = 0;
+}
 
 //token for decision if i got next expression or not
 token_t *next_token = NULL;
@@ -13,12 +44,18 @@ token_t *next_token = NULL;
 void init_parser(){
     stack = scope_stack_init();
     p_stack = par_stack_init();
+    fun_calls_num = 0;
+    fun_calls = NULL;
 }
 
 void free_parser(){
     stack_dispose(&stack);
     par_stack_dispose(&p_stack);
+    dispose_funcalls();
+    
 }
+
+
 
 error_t run_parser(scanner_t *scanner){
     token_t *token;
@@ -65,12 +102,19 @@ error_t run_parser(scanner_t *scanner){
 
             if(error != SUCCESS){
                 printf("chyba %d \n", error);
-                destroy_token(next_token);
+                // todo
+                // destroy_token(next_token);
                 return error;
             }
             
             destroy_token(next_token);
         }
+    }
+    print_funcall();
+    error = fun_calls_handler();
+    if(error != SUCCESS){
+        printf("chyba funcall %d \n", error);
+        return error;
     }
     printf("succes\n");
     return SUCCESS;
@@ -100,7 +144,13 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
         case NEW_LINE:
             return SUCCESS;
         case IDENTIFIER:
-            return parser_function_call(scanner, token);
+            char* func_name = string_copy(token->data);
+            //todo free
+            error_t error = get_token(scanner, &token);
+            printf("%d\n", token->type);
+            if(token->type == LEFT_PAR){
+                return parser_function_call(scanner, func_name, Not_specified);
+            }
         default:
             return SYNTAX_ERROR;
     }
@@ -1008,6 +1058,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
+    printf("inserted address %p\n", function);
     bst_print(stack->stack_array[0]);
     printf("function id: %s\n", function->id);
     printf("stack top %d\n", stack->top);
@@ -1032,7 +1083,6 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
 error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
-    sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
     bst_node* arg_tree;
     bst_init(&arg_tree);
 
@@ -1139,46 +1189,190 @@ error_t parser_return(scanner_t *scanner, token_t *token){
     //zavolame vyhodnoceni vyrazu
     return SUCCESS;
 }
+ // if(error != 0){
+//     return error;
+// }
+#define CHECKERROR(error) if ((error) != 0) return error; 
 
-error_t parser_function_call(scanner_t *scanner, token_t *token){
+error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type required_return_type){
     error_t error;
-
+    token_t *token;
+    sym_t_function fun_call;
+    fun_call.return_type = required_return_type;
+    fun_call.num_params = 0;
+    fun_call.id = string_copy(func_name);
     error = get_token(scanner, &token);
-    if(token->type != LEFT_PAR){
-        return SYNTAX_ERROR;
-    }
-    error = get_token(scanner, &token);
+    CHECKERROR(error)
     if(token->type != RIGHT_PAR){
         while (1)
         {
-            if(token->type == IDENTIFIER){
-                error = get_token(scanner, &token);
-                if(token->type == COLON){
-                    error = get_token(scanner, &token);
-                    if(token->type != STRING){
-                        // return SUCCESS;
-                        return SYNTAX_ERROR;
-                    }
-                }else if(token->type == COMMA){
-                    // return SUCCESS;
-                }else{
-                    return SUCCESS;
-                }
+            if(fun_call.num_params == 0){
+                fun_call.params = (sym_t_param*)malloc(sizeof(sym_t_param));
+            } else {
+                fun_call.params = (sym_t_param*)realloc(fun_call.params,sizeof(sym_t_param) * (fun_call.num_params + 1));
             }
-            
-            error = get_token(scanner, &token);
-            if(token->type == RIGHT_PAR){
+            fun_call.params[fun_call.num_params].param_name = NULL;
+            fun_call.params[fun_call.num_params].param_id = NULL;
+
+            if((token->type == IDENTIFIER) ||(token->type == STRING)||(token->type == INT)||(token->type == DOUBLE)||(token->type == NIL)){
+                
+                if(token->type == IDENTIFIER){
+                    char *first_param_token = string_copy(token->data);
+                    error = get_token(scanner, &token);
+                    CHECKERROR(error)
+                    if(token->type == COLON){
+                        fun_call.params[fun_call.num_params].param_name = first_param_token;
+                        error = get_token(scanner, &token);
+                        CHECKERROR(error)
+                        if((token->type == IDENTIFIER) ||(token->type == STRING)||(token->type == INT)||(token->type == DOUBLE)||(token->type == NIL)){
+                            variable_type vartype;
+                            if(token->type == STRING){
+                                vartype = String;
+                            } else if(token->type == INT){
+                                vartype = Int;
+                            } else if(token->type == DOUBLE){
+                                vartype = Double;
+                            } else if(token->type == NIL){
+                                vartype = Nil;
+                            } else if(token->type == IDENTIFIER){
+                                bst_node *id = search_variable_in_all_scopes(stack, token->data);
+                                if(id == NULL){
+                                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                                }
+                                if(id->node_data_type == FUNCTION){
+                                    //todo error
+                                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                                }
+                                vartype = id->variable_type;
+                            }
+                            fun_call.params[fun_call.num_params].param_type = vartype;
+                            error = get_token(scanner, &token);
+                            CHECKERROR(error)
+                        }else{
+                            return SYNTAX_ERROR;
+                        }
+                    } else {
+                        bst_node *id = search_variable_in_all_scopes(stack, first_param_token);
+                        if(id == NULL){
+                            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                        }
+                        if(id->node_data_type == FUNCTION){
+                            //todo error
+                            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                        }
+                        free(first_param_token);
+
+                        fun_call.params[fun_call.num_params].param_type = id->variable_type;
+                    }
+                }else{
+                    variable_type vartype;
+                    if(token->type == STRING){
+                        vartype = String;
+                    } else if(token->type == INT){
+                        vartype = Int;
+                    } else if(token->type == DOUBLE){
+                        vartype = Double;
+                    } else if(token->type == NIL){
+                        vartype = Nil;
+                    }
+                    fun_call.params[fun_call.num_params].param_type = vartype;
+                    error = get_token(scanner, &token);
+                    CHECKERROR(error)
+                }
+            } else {
+                return SYNTAX_ERROR;
+            }
+            fun_call.num_params++;
+            if(token->type == COMMA){
+                error = get_token(scanner, &token);
+                CHECKERROR(error)
+            } else if(token->type == RIGHT_PAR){
                 break;
+            } else {
+                return SYNTAX_ERROR;
             }
         }
         
     }
-
+        add_fun_call(&fun_call);
       return SUCCESS;
 
     }
-    
 
+bool check_type_compatibility(variable_type def, variable_type val){
+    if(def == val){
+        return true;
+    }
+    if(def == Not_specified){
+        return true;
+    }
+    if(def == String_nil && val == String){
+        return true;
+    }
+    if(def == Int_nil && val == Int){
+        return true;
+    }
+    if(def == Double_nil && val == Double){
+        return true;
+    }
+
+}
+
+error_t fun_calls_handler(){
+    for(int i = 0; i < fun_calls_num; i++){
+        bst_node *node = bst_search(stack->stack_array[0], fun_calls[i].id);
+        if(node == NULL){
+            return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
+        }
+        if(node->node_data_type != FUNCTION){
+            return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
+        }
+        sym_t_function *node_fun = node->data;
+        if(node_fun->num_params != fun_calls[i].num_params){
+            //todo
+            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+        }
+        printf("a\n");
+        for(int j = 0; j < fun_calls[i].num_params; j++){
+            if(fun_calls[i].params[j].param_name != NULL){
+                if(strcmp(node_fun->params[j].param_name, fun_calls[i].params[j].param_name) != 0){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+            }else {
+                if(strcmp(node_fun->params[j].param_name, "_") != 0){
+                    return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+                }
+            }
+            if(!check_type_compatibility(node_fun->params[j].param_type, fun_calls[i].params[j].param_type)){
+                return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+            }
+        }
+        printf("return type call: %s, def: %s\n", variable_type_to_str(fun_calls[i].return_type), variable_type_to_str(node_fun->return_type));
+        if(!check_type_compatibility(fun_calls[i].return_type, node_fun->return_type)){
+            return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+        }
+    }
+    return SUCCESS;
+}
+
+
+
+void print_funcall(){
+    printf("Printing fun calls:\n");
+    for(int i = 0; i < fun_calls_num; i++){
+        printf("%s(", fun_calls[i].id);
+        for(int j = 0; j < fun_calls[i].num_params; j++){
+            if(fun_calls[i].params[j].param_name != NULL){
+                printf("%s:", fun_calls[i].params[j].param_name);
+            }
+
+            printf("%s   ", variable_type_to_str(fun_calls[i].params[j].param_type));
+
+        }
+        printf(")\n");
+    }
+
+}
 
 
 #endif

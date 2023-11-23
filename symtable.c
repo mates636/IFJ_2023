@@ -107,8 +107,20 @@ void bst_dispose(bst_node **tree){
         return;
     }else{
         if ((*tree)->data != NULL) {
-            free(((sym_t_variable *)(*tree)->data)->data);
-            free((*tree)->data);
+            if ((*tree)->node_data_type == FUNCTION) {
+                sym_t_function *fun = (*tree)->data;
+                
+                free(fun->id);
+                for(int i = 0; i < fun->num_params; i++){
+                    free(fun->params[i].param_name);
+                    free(fun->params[i].param_id);
+                }
+                free(fun->params);
+                free((*tree)->data);
+            } else {  // VARIABLE_VAR or VARIABLE_LET
+                free(((sym_t_variable *)(*tree)->data)->data);
+                free((*tree)->data);
+            }
         }
         free((*tree)->key);
         bst_dispose(&(*tree)->left_child);
@@ -216,7 +228,8 @@ variable_type find_variable_type(char *data){
 
 void insert_function(bst_node **tree, char *key, sym_t_function *data){
     bst_insert(tree, key, FUNCTION);
-    (*tree)->data = data;
+    bst_node *fun_node = bst_search(*tree, key);
+    fun_node->data = data;
 }
 
 
@@ -293,6 +306,30 @@ void expression_stack_dispose(expression_s **expression_stack){
 }
 
 
+char *variable_type_to_str(variable_type t){
+    switch (t){
+        case Not_specified:
+            return "Not_specified";
+        case Nil:
+            return "Nil";
+        case String:
+            return "String";
+        case Int:
+            return "Int";
+        case Double:
+            return "Double";
+        case String_nil:
+            return "String_nil";
+        case Int_nil:
+            return "Int_nil";
+        case Double_nil:
+            return "Double_nil";
+        case Void:
+            return "Void";
+        default:
+            return "??";
+    }
+}
 
 
 

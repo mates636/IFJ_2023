@@ -29,6 +29,8 @@ typedef enum variable_type {
     Void
 }variable_type;
 
+char *variable_type_to_str(variable_type t);
+
 typedef struct bst_node {
   char *key;              
   void *data;
