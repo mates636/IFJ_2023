@@ -40,20 +40,20 @@ typedef struct bst_node {
   struct bst_node *right_child; 
 } bst_node;
 
-void bst_init(bst_node **tree);
-bst_node *bst_search(bst_node *tree, char *key);
-bst_node *search_variable_in_all_scopes();
-void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
-void bst_dispose(bst_node **tree);
-void bst_print(bst_node *tree);
-char* string_copy(char *src);
-
-
 //stack for scope
 typedef struct stack {
     bst_node *stack_array[STACK_MAX_SIZE];
     int top;
 } scope_stack;
+
+void bst_init(bst_node **tree);
+bst_node *bst_search(bst_node *tree, char *key);
+bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key);
+void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
+void bst_dispose(bst_node **tree);
+void bst_print(bst_node *tree);
+char* string_copy(char *src);
+
 
 scope_stack *scope_stack_init();
 void scope_stack_push(scope_stack *stack);
@@ -69,7 +69,7 @@ typedef struct sym_t_variable {
 
 typedef struct sym_t_param{
     char *param_name;
-    char *param_id;
+    char *param_id;//need for function definition
     variable_type param_type;
 }sym_t_param;
 

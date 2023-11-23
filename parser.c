@@ -39,7 +39,7 @@ void dispose_funcalls(){
 }
 
 //token for decision if i got next expression or not
-token_t *next_token = NULL;
+//token_t *next_token = NULL;
 
 void init_parser(){
     stack = scope_stack_init();
@@ -64,13 +64,32 @@ error_t run_parser(scanner_t *scanner){
     scope_stack_push(stack);
     while(true){
         //checking if i didn't start next expression in expression before
-        if(next_token == NULL){
+        //if(next_token == NULL){
             error = get_token(scanner, &token);
 
             //checking error from scanner
             if(error != SUCCESS){
                 destroy_token(token);
                 return error;
+            }
+
+            //we were in if or while or func body
+            if(token->type == RIGHT_BR){
+                //end of local scope
+                error = scope_stack_pop(stack);
+                if(error != SUCCESS){
+                    return error;
+                }
+
+                //search for }
+                if(p_stack->par_stack_array[p_stack->top] != '{'){
+                    return SYNTAX_ERROR;
+                }
+                error = par_stack_pop(p_stack);
+                if(error != SUCCESS){
+                    return error;
+                }
+                return SUCCESS;
             }
 
             //end of file for compilation
@@ -90,25 +109,29 @@ error_t run_parser(scanner_t *scanner){
                 return error;
             }
             destroy_token(token);
-        }else{
+       /* }else{
+            token_t *tmp;
+            tmp =  next_token;
+            next_token = NULL;
+
             //end of file for compilation
-            if(next_token->type == EOF_TYPE){
-                destroy_token(next_token);
+            if(tmp->type == EOF_TYPE){
+                destroy_token(tmp);
                 break;
             }
 
             //start of checking which expression i got
-            error = parser_analyse(scanner, next_token); 
+            error = parser_analyse(scanner, tmp); 
 
             if(error != SUCCESS){
                 printf("chyba %d \n", error);
                 // todo
-                // destroy_token(next_token);
+                // destroy_token(tmp);
                 return error;
             }
             
-            destroy_token(next_token);
-        }
+            destroy_token(tmp);
+        }*/
     }
     print_funcall();
     error = fun_calls_handler();
@@ -116,12 +139,21 @@ error_t run_parser(scanner_t *scanner){
         printf("chyba funcall %d \n", error);
         return error;
     }
+
+    //cotrol for paranthesis
+    if(p_stack->top != -1){
+        printf("paranth\n");
+        return SYNTAX_ERROR;
+    }
+
     printf("succes\n");
     return SUCCESS;
 }
 
 //decision for which expression we are going
 error_t parser_analyse(scanner_t *scanner, token_t *token){
+    char *func_name;
+    error_t error;
 
     switch (token->type)
     {
@@ -132,24 +164,26 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_variable(scanner, token);
             }else if(strcmp(token->data, "func") == 0){
                 return parser_function(scanner, token);
-            /*}else if(token->){
-                return parser_expression(scanner, token);
-            }else if(token->data == "func"){
-                return parser_function();
-            }else else if(token->data == "while"){
-                return parser_while_statement();
-            */}else{
+            }else if(strcmp(token->data, "if") == 0){
+                return parser_if_or_while_statement(scanner, token, true);
+            }else if(strcmp(token->data, "while") == 0){
+                return parser_if_or_while_statement(scanner, token, false);
+            }else{
                 return SYNTAX_ERROR;
             }
         case NEW_LINE:
             return SUCCESS;
+        case EOF_TYPE:
+            return SUCCESS;         
         case IDENTIFIER:
-            char* func_name = string_copy(token->data);
+            func_name = string_copy(token->data);
             //todo free
             error_t error = get_token(scanner, &token);
             printf("%d\n", token->type);
             if(token->type == LEFT_PAR){
                 return parser_function_call(scanner, func_name, Not_specified);
+            }else{
+                return parser_def_or_dec_variable(scanner, token, func_name);
             }
         default:
             return SYNTAX_ERROR;
@@ -189,7 +223,7 @@ error_t parser_variable_datatype(token_t *token){
 ///////////////////////////NEW VARIABLE /////////////////////////////////////
 error_t parser_variable(scanner_t *scanner, token_t *token){
     bool can_modify;
-    if(token->data == "let"){
+    if(strcmp(token->data, "let") == 0){
         can_modify = false;
     }else{
         can_modify = true;
@@ -267,9 +301,13 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         }
 
         if(parser_assignment(token) != SUCCESS){
-            next_token = token;
-            return SUCCESS;
+            if(token->type != NEW_LINE){
+                return SYNTAX_ERROR;
+            }else{
+                return SUCCESS;
+            }
         }
+
     }
     
     //there is no data type 
@@ -282,8 +320,10 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         valid_expression = true;
 
         variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
-        error = parser_expression(scanner, token, type_of_variable);
+        bool if_while_condition = false;
+        error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
         if(error != SUCCESS){
+
             return error;
         }
 
@@ -295,11 +335,11 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         }else{
             //control if var type and expression type are same
             if(tree_node->variable_type == Int_nil || tree_node->variable_type == Double_nil || tree_node->variable_type == String_nil){
-                if(tree_node->variable_type == Int_nil && ((*type_of_variable) != Int || (*type_of_variable) != Int_nil)){
+                if(tree_node->variable_type == Int_nil && ((*type_of_variable) != Int && (*type_of_variable) != Int_nil && (*type_of_variable) != Nil)){
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }else if(tree_node->variable_type == Double_nil && ((*type_of_variable) == String || (*type_of_variable) == String_nil)){
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }else if(tree_node->variable_type == String_nil && ((*type_of_variable) != String || (*type_of_variable) != String_nil)){
+                }else if(tree_node->variable_type == String_nil && ((*type_of_variable) != String && (*type_of_variable) != String_nil && (*type_of_variable) != Nil)){
                     return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
                 }
             }
@@ -327,11 +367,8 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         
         if(error != SUCCESS){
             return error;
-        }else{
-            return SUCCESS;
         }
     }
-
     //control if i got at least type or value
     if(valid_expression == true){
         return SUCCESS;
@@ -339,6 +376,72 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         return SYNTAX_ERROR;
     }
 }
+
+error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name){
+    error_t error;
+    bst_node *variable = search_variable_in_all_scopes(stack, var_name);
+    if(variable == NULL){
+        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+    }
+    if(variable->node_data_type == VARIABLE_LET){
+        return SEMANTIC_ERROR_OTHERS;
+    }
+    if(token->type != ASSIGMENT){
+        return SYNTAX_ERROR;
+    }
+    variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
+    bool if_while_condition = false;
+    error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
+    if(error != SUCCESS){
+        return error;
+    }
+
+    if(variable->variable_type == Not_specified){
+        if((*type_of_variable) == Nil){
+            return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
+        }
+        variable->variable_type = (*type_of_variable);    
+    }else{
+        //control if var type and expression type are same
+        if(variable->variable_type == Int_nil || variable->variable_type == Double_nil || variable->variable_type == String_nil){
+            if(variable->variable_type == Int_nil && ((*type_of_variable) != Int && (*type_of_variable) != Int_nil && (*type_of_variable) != Nil)){                
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else if(variable->variable_type == Double_nil && ((*type_of_variable) == String || (*type_of_variable) == String_nil)){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else if(variable->variable_type == String_nil && ((*type_of_variable) != String && (*type_of_variable) != String_nil && (*type_of_variable) != Nil)){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }
+
+        if(variable->variable_type == Int || variable->variable_type == Double || variable->variable_type == String){
+            if(variable->variable_type == Double){
+                if((*type_of_variable) == String){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+            }else{
+                if(variable->variable_type != (*type_of_variable)){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+            }
+        }
+    }
+    ////////TO DO ONLY SIMULATION OF DATA TO VARIABLE
+        if((*type_of_variable) == String || (*type_of_variable) == String){
+            insert_variable_data(variable, "simulation");
+        }else if((*type_of_variable) == Int || (*type_of_variable) == Int_nil){
+            insert_variable_data(variable, "111");
+        }else if((*type_of_variable) == Double || (*type_of_variable) == Double_nil){
+            insert_variable_data(variable, "111.1");
+        }
+    free(type_of_variable);
+    
+    if(error != SUCCESS){
+        return error;
+    }else{
+        return SUCCESS;
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////HELP FUNCTIONS - EXPRESSION////////////////////////
@@ -612,6 +715,10 @@ error_t expression_compose(expression_s **expression_stack, variable_type *expre
                 (*expression_stack)->top = (*expression_stack)->top + 1;
                 (*expression_stack)->token_array[(*expression_stack)->top] = operand;
                 break;
+            case KEYWORD:
+                (*expression_type) = Nil;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
         }
         return SUCCESS;
     }
@@ -713,7 +820,8 @@ bool push_or_compose(expression_s **expression_stack, int new_operator_priority)
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////EXPRESSION////////////////////////////////////
-error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type){
+error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass){
+    
     error_t error;
     bst_node *variable;
     variable_type *expression_type;
@@ -738,7 +846,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             if(error != SUCCESS){
                 return error;
             }
-            
+
         ///////////////got (
         if((token->type == LEFT_PAR)){
             if(!want_VarOrLit){
@@ -747,7 +855,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 at_least_one_operand = true;
 
                 par_stack_push(p_stack, '(');
-                error = parser_expression(scanner, token, expression_type_par);
+
+                error = parser_expression(scanner, token, expression_type_par, if_while_condition, false, NULL);
                 if(error != SUCCESS){
                     return error;
                 }
@@ -852,6 +961,9 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         ///////////////got == != < <= > >=
         }else if(token->type == EQUALS || token->type == LESS || token->type == MORE ||
                 token->type == MORE_EQUALS || token->type == NOT_EQUALS || token->type == LESS_EQUALS){
+            if((*if_while_condition) == true){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
             if(!want_operator){
                 return SYNTAX_ERROR;
             }else{
@@ -881,6 +993,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
+                (*if_while_condition) = true;
             }
 
         ///////////////got !
@@ -969,9 +1082,34 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 want_VarOrLit = false;
                 want_operator = true;          
             }
+        }else if(token->type == KEYWORD){
+            at_least_one_operand = true;
+            if(!want_VarOrLit){
+                return SYNTAX_ERROR;
+            }else{
+                if(strcmp(token->data, "nil") == 0){
+                    expression_stack_push(expression_stack, token);
+                    want_VarOrLit = false;
+                    want_operator = true;  
+                }else{
+                    return SYNTAX_ERROR;
+                }
+                
+            }
+        }else if(token->type == LEFT_BR){
+            if(is_it_while_or_if == true){
+                if(at_least_one_operand == false){
+                    return SYNTAX_ERROR;
+                }
+                (*token_to_pass) = token;
+                want_VarOrLit = false;
+                want_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
         }else{
-
-            if(token->type == RIGHT_PAR || token->type == NEW_LINE){
+            if(token->type == RIGHT_PAR || token->type == NEW_LINE || token->type == EOF_TYPE){
                 if(at_least_one_operand == false){
                     return SYNTAX_ERROR;
                 }
@@ -994,6 +1132,19 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     if(want_VarOrLit == true){
         return SYNTAX_ERROR;
     }  
+
+    //syntax let on if or while statement
+    if(expression_stack->top == 0){
+        variable = search_variable_in_all_scopes(stack, expression_stack->token_array[expression_stack->top]->data);
+        if(variable != NULL){
+            if(variable->node_data_type == VARIABLE_LET){
+                (*if_while_condition) = true;
+                //TO DOO
+                //next_token  = init_token_data(IDENTIFIER, variable->key, strlen(variable->key));
+            }
+        }
+    }
+
     //pop the expression stack
     while(true){
         error = expression_compose(&expression_stack, expression_type);
@@ -1004,12 +1155,13 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         if(expression_stack->top == 0){
             break;
         }
-    }   
-    
+    } 
+
     variable_type type_to_pass = (*expression_type);
     if(control_type != NULL){
         (*control_type) = type_to_pass;
     }
+
     free(expression_type);
     free(expression_type_par);
     
@@ -1374,5 +1526,105 @@ void print_funcall(){
 
 }
 
+
+error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if_or_while){
+    error_t error;
+    bool if_while = false;
+    token_t *token_to_pass;
+    token_to_pass = (token_t*)malloc(sizeof(token_t));
+    //token_t *let_syntax;
+    
+    //TO DO NEW LINES BETWEEN IF AND ()
+    
+    error = parser_expression(scanner, token, Not_specified, &if_while, true, &token_to_pass);
+
+    if(error != SUCCESS){
+        return error;
+    }
+    if(if_while == false){
+        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+    }
+
+    //let syntax problem
+    //if(next_token != NULL){
+    //    let_syntax = init_token_data(IDENTIFIER, next_token->data, strlen(next_token->data));
+    //    destroy_token(next_token);
+    //}
+    //type must be not nil 
+    // TO DOO
+    //destroy_token(let_syntax);
+
+
+    
+    error = parser_if_or_while_body(scanner, token_to_pass);
+    if(error != SUCCESS){
+        return error;
+    }
+    //if - true || while - false
+    if(if_or_while){
+        while(true){
+            error = get_token(scanner, &token);
+            if(error != SUCCESS){
+                return error;
+            }
+
+            if(token->type == NEW_LINE){
+                continue;
+            }else if(token->type == KEYWORD){
+                if(strcmp(token->data, "else") == 0){
+                    break;
+                }else{
+                    return SYNTAX_ERROR;
+                }
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }
+
+        error = parser_if_or_while_body(scanner, token);
+        if(error != SUCCESS){
+            return error;
+        }
+    }
+    return SUCCESS;
+}
+
+error_t parser_if_or_while_body(scanner_t *scanner, token_t *token){
+    error_t error;
+
+    while(true){
+        //left BR from expression
+        if(token->type == LEFT_BR){
+            break;
+        }
+        error = get_token(scanner, &token);
+        if(error != SUCCESS){
+            return error;
+        }
+
+        if(token->type == NEW_LINE){
+            continue;
+        }
+        else if(token->type == LEFT_BR){
+            break;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }
+
+    // { push
+    par_stack_push(p_stack, '{');
+
+    //local scope
+    scope_stack_push(stack);
+
+    //work in local scope
+    error = run_parser(scanner);
+    if(error != SUCCESS){
+        return error;
+    }
+    
+    return SUCCESS;
+}
 
 #endif
