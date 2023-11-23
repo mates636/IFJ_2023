@@ -1230,6 +1230,29 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // printf("dfas\n");
     scope_stack_push(stack);
 
+    //SIMULATION - putting arguments into local tree for avaibility to using them in the function
+    identifier = search_variable_in_all_scopes(stack, function->id);
+    sym_t_function *fun = identifier->data;
+    bst_node *insert_arg_as_var;
+    bst_node *scope_for_insert = stack->stack_array[stack->top];
+
+    for(int i = 0; i < fun->num_params; i++){
+        char *param = fun->params[i].param_id;
+        bst_insert(&scope_for_insert, param, FUNCTION_PARAM);
+        identifier = bst_search(scope_for_insert, param);
+        identifier->variable_type = fun->params[i].param_type;
+        if(identifier->variable_type == Int || identifier->variable_type == Int_nil){
+            insert_variable_data(identifier, "111");
+        }else if(identifier->variable_type == Double || identifier->variable_type == Double_nil){
+            insert_variable_data(identifier, "111.1");
+        }else if(identifier->variable_type == String || identifier->variable_type == String_nil){
+            insert_variable_data(identifier, "SIMULATION");
+        }
+    }
+    
+
+
+
     error = run_parser(scanner);
     if(error != SUCCESS){
         return error;
