@@ -20,7 +20,9 @@ error_t parser_variable(scanner_t *scanner, token_t *t);
     error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify);
     error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_node *tree_node);
 
-error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type);
+error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name);
+
+error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass);
     bool push_or_compose(expression_s **expression_stack, int new_operator_priority);
     error_t expression_compose(expression_s **expression_stack, variable_type *expression_type);
     error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token);
@@ -37,4 +39,7 @@ error_t parser_function_call(scanner_t *scanner,char* func_name, variable_type r
 //error_t parser_while_statement();
 error_t fun_calls_handler();
 void print_funcall();
+
+error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if_or_while);
+    error_t parser_if_or_while_body(scanner_t *scanner, token_t *token);
 #endif
