@@ -105,7 +105,7 @@ error_t run_parser(scanner_t *scanner){
             
             if(error != SUCCESS){
                 
-                printf("chyba %d \n", error);
+                //printf("chyba %d \n", error);
                 destroy_token(token);
                 return error;
             }
@@ -125,7 +125,7 @@ error_t run_parser(scanner_t *scanner){
             error = parser_analyse(scanner, tmp); 
 
             if(error != SUCCESS){
-                printf("chyba %d \n", error);
+                //printf("chyba %d \n", error);
                 // todo
                 // destroy_token(tmp);
                 return error;
@@ -137,17 +137,17 @@ error_t run_parser(scanner_t *scanner){
     //print_funcall();
     error = fun_calls_handler();
     if(error != SUCCESS){
-        // printf("chyba funcall %d \n", error);
+        // //printf("chyba funcall %d \n", error);
         return error;
     }
 
     //cotrol for paranthesis
     if(p_stack->top != -1){
-        printf("paranth\n");
+        //printf("paranth\n");
         return SYNTAX_ERROR;
     }
 
-    printf("succes\n");
+    //printf("succes\n");
     return SUCCESS;
 }
 
@@ -333,13 +333,15 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 
             return error;
         }
-
+        
         if(tree_node->variable_type == Not_specified){
             if((*type_of_variable) == Nil){
                 return SEMANTIC_ERROR_TYPE_CANNOT_INFERRED;
             }
-            tree_node->variable_type = (*type_of_variable);    
+            tree_node->variable_type = (*type_of_variable);
+              
         }else{
+          
             //control if var type and expression type are same
             if(tree_node->variable_type == Int_nil || tree_node->variable_type == Double_nil || tree_node->variable_type == String_nil){
                 if(tree_node->variable_type == Int_nil && ((*type_of_variable) != Int && (*type_of_variable) != Int_nil && (*type_of_variable) != Nil)){
@@ -362,9 +364,10 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
                 }
             }
         }
+        
         ////////TO DO ONLY SIMULATION OF DATA TO VARIABLE
             if((*type_of_variable) == String || (*type_of_variable) == String){
-                insert_variable_data(tree_node, "simulation");
+                printf("%da\n", tree_node->variable_type);
             }else if((*type_of_variable) == Int || (*type_of_variable) == Int_nil){
                 insert_variable_data(tree_node, "111");
             }else if((*type_of_variable) == Double || (*type_of_variable) == Double_nil){
@@ -453,11 +456,13 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
 
 ///////////////////////////HELP FUNCTIONS - EXPRESSION////////////////////////
 error_t parser_expression_type_control_first_value(token_t *token, variable_type *type_control){
-    bst_node *id; 
+    bst_node *id;
+    sym_t_variable *var; 
     
     switch(token->type){
             case IDENTIFIER:
                 id = search_variable_in_all_scopes(stack, token->data);
+                var = id->data;
                 if(id == NULL){
                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                 }else{
@@ -465,7 +470,7 @@ error_t parser_expression_type_control_first_value(token_t *token, variable_type
                         return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                     }
                 }
-                if(strcmp(id->data, "nil") == 0){
+                if(strcmp(var->data, "nil") == 0){
                     (*type_control) = Nil;
                 }else{
                     (*type_control) = id->variable_type;
@@ -501,7 +506,7 @@ error_t parser_expression_type_control_first_value(token_t *token, variable_type
 
 //expression type control for arithmetic and string operations
 error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type *type_control){
-    bst_node *id; 
+    bst_node *id;
     
     //first value in expression
     if((*type_control) == Not_specified){
@@ -583,7 +588,7 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
             }
         }
         if(type_token == EQUALS || type_token == NOT_EQUALS){
-            printf("%dsdd\n", (*type_control));
+            //printf("%dsdd\n", (*type_control));
             switch(token->type){
                 case STRING:
                     if((*type_control) != String){
@@ -928,7 +933,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     priority = 1;
                     expression_stack_push(expression_stack, token);
                 }
-                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false; 
             }
@@ -960,7 +965,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     priority = 2;
                     expression_stack_push(expression_stack, token);
                 }
-                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
             }
@@ -997,7 +1002,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     expression_stack_push(expression_stack, token);
                 }
 
-                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
                 (*if_while_condition) = true;
@@ -1074,6 +1079,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             }else{
                 if(token->type == IDENTIFIER){
                     variable = search_variable_in_all_scopes(stack, token->data);
+                    
                     //variable exists?
                     if(variable == NULL){
                         return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
@@ -1085,7 +1091,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 }
                 
                 expression_stack_push(expression_stack, token);
-                printf("%s\n", expression_stack->token_array[expression_stack->top]->data);    
+                //printf("%d\n", expression_stack->token_array[expression_stack->top]->type);    
                 want_VarOrLit = false;
                 want_operator = true;          
             }
@@ -1191,7 +1197,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
     bst_node *identifier = bst_search(stack->stack_array[0], token->data);
     if(identifier != NULL){
-        // printf("definovany\n");
+        // //printf("definovany\n");
         return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR; //TODO
     }
     function->id = malloc(strlen(token->data) + 1);
@@ -1219,14 +1225,14 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
-    // printf("inserted address %p\n", function);
+    // //printf("inserted address %p\n", function);
     bst_print(stack->stack_array[0]);
-    // printf("function id: %s\n", function->id);
-    // printf("stack top %d\n", stack->top);
-    // printf("tree node address %p\n", stack->stack_array[0]);
+    // //printf("function id: %s\n", function->id);
+    // //printf("stack top %d\n", stack->top);
+    // //printf("tree node address %p\n", stack->stack_array[0]);
     //vyhodnoceni tela funkce
     // error = parser_return(scanner, token);
-    // printf("dfas\n");
+    // //printf("dfas\n");
     scope_stack_push(stack);
 
     //SIMULATION - putting arguments into local tree for avaibility to using them in the function
@@ -1547,7 +1553,7 @@ error_t fun_calls_handler(){
                 return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
             }
         }
-        // printf("return type call: %s, def: %s\n", variable_type_to_str(fun_calls[i].return_type), variable_type_to_str(node_fun->return_type));
+        // //printf("return type call: %s, def: %s\n", variable_type_to_str(fun_calls[i].return_type), variable_type_to_str(node_fun->return_type));
         if(!check_type_compatibility(fun_calls[i].return_type, node_fun->return_type)){
             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
@@ -1558,18 +1564,18 @@ error_t fun_calls_handler(){
 
 
 void print_funcall(){
-    printf("Printing fun calls:\n");
+    //printf("Printing fun calls:\n");
     for(int i = 0; i < fun_calls_num; i++){
-        printf("%s(", fun_calls[i].id);
+        //printf("%s(", fun_calls[i].id);
         for(int j = 0; j < fun_calls[i].num_params; j++){
             if(fun_calls[i].params[j].param_name != NULL){
-                printf("%s:", fun_calls[i].params[j].param_name);
+                //printf("%s:", fun_calls[i].params[j].param_name);
             }
 
-            printf("%s   ", variable_type_to_str(fun_calls[i].params[j].param_type));
+            //printf("%s   ", variable_type_to_str(fun_calls[i].params[j].param_type));
 
         }
-        printf(")\n");
+        //printf(")\n");
     }
 
 }
