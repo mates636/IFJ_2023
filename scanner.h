@@ -69,6 +69,7 @@ typedef enum state_t{
     S_LESS,
     S_MORE,
     S_EQUALS,
+    S_NOTEQUALS,
     S_RETURN_TYPE,
     S_STRING_ESCAPE,
     S_COMMENT,
