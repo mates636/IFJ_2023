@@ -41,7 +41,8 @@ typedef enum token_type_t{
     MORE,       //>
     MORE_EQUALS,//>=
     RETURN_TYPE,//->
-    COMMENT,    // //, /**/
+    COMMENT,    // //
+    MULTILINE,   // /**/
     NIL_CONVERT,//??
     EXCLAMATION,//!
     NEW_LINE,   //\n
@@ -76,7 +77,9 @@ typedef enum state_t{
     S_COMMENT2,
     S_COMMENT3,
     S_NIL_CONVERT,
-    S_IDENTIFIERORKEYWORD
+    S_IDENTIFIERORKEYWORD,
+    S_MULTI_STRING,
+    S_MULTI_STRING2
 }state_t;
 
 typedef struct scanner_t{

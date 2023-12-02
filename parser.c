@@ -176,6 +176,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             return SUCCESS;
         case COMMENT:
             return SUCCESS;
+            case MULTILINE:
+        return SUCCESS;
         // case IDENTIFIER:
         //     char* func_name = string_copy(token->data);
             //todo free idk
