@@ -156,11 +156,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
             break;
             break;
             case S_STRING:
-                // printf("%c\n", next_char);
-
                 next_char = get_char(scanner);
-                // printf("%c\n", next_char);
-
                 if(next_char == '\0'){
                     return LEXICAL_ERROR;
                 } else if(next_char == '\n'){
@@ -169,24 +165,18 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     add_char(next_char, scanner);
                     scanner->state = S_STRING_ESCAPE;
                 }else if(next_char == '\"'){
-                    // add_char(next_char, scanner);
                     next_char = get_char(scanner);
                     if(next_char == '\"'){
-                        // printf("%d\n", next_char);
-                    add_char(next_char, scanner);
-
+                        add_char(next_char, scanner);
                         scanner->state = S_MULTI_STRING;
                     } else {
-                        // add_char(next_char, scanner);
                         scanner->state = S_INIT;
                         *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
                         scanner->buffer_pos = 0;
-                        // scanner->rewind = next_char;
                         return SUCCESS;
                 }
                 }else if(next_char > 31 && next_char != 34){
                     add_char(next_char, scanner);
-                    // printf("afsfafas\n");
                     scanner->state = S_STRING;
                 } else {
                     scanner->state = S_INIT;
@@ -196,45 +186,54 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 }
             break;
             case S_MULTI_STRING:
-                // next_char = get_char(scanner);
                 if(next_char == '\"'){
                     add_char(next_char, scanner);
-                    // printf("%c\n", next_char);
-                next_char = get_char(scanner);
-                    // printf("%c\n", next_char);
-
-                    scanner->state = S_STRING;
+                    scanner->state = S_MULTI_STRING2;
                 }
                 next_char = get_char(scanner);
                 if(next_char == '\"'){
                     scanner->state = S_INIT;
-                // printf("fdasf\n");
-
                     *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
                     scanner->buffer_pos = 0;                
                     return SUCCESS;
                 }
-
-                //  else {
-                    // add_char(next_char, scanner);
-                    // scanner->state = S_INIT;
-                // }
             break;
             case S_MULTI_STRING2:
-                 next_char = get_char(scanner);
+                next_char = get_char(scanner);
                 if(next_char == '\0'){
                     return LEXICAL_ERROR;
                 }else if(next_char == '\\'){
                     add_char(next_char, scanner);
-                    scanner->state = S_STRING_ESCAPE;
-                    }else if(next_char > 31 && next_char != 34) || next_char == '\n'{
+                    next_char = get_char(scanner);
+                    if(is_escape(next_char)){
                     add_char(next_char, scanner);
-                    scanner->state = S_STRING;
+                    scanner->state = S_MULTI_STRING2;
+                    }
+                    
+                }else if(next_char == '\n'){
+                    scanner->state = S_MULTI_STRING2;
+                }else if(next_char > 31 && next_char != 34 && next_char != 34){
+                    add_char(next_char, scanner);
+                    scanner->state = S_MULTI_STRING2;
+                }else if(next_char == '\"'){
+                    add_char(next_char, scanner);
+                    next_char = get_char(scanner);
+                    if(next_char == '\"'){
+                        add_char(next_char, scanner);
+                        next_char = get_char(scanner);
+                        if(next_char == '\"'){
+                            scanner->state = S_INIT;
+                            *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
+                            scanner->buffer_pos = 0;                
+                            return SUCCESS;
                 } else {
-                    scanner->state = S_INIT;
-                    *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
-                    scanner->buffer_pos = 0;                
-                    return SUCCESS;
+                    return LEXICAL_ERROR;
+                }
+                } else {
+                    return LEXICAL_ERROR;
+                }
+                } else {
+                    return LEXICAL_ERROR;
                 }
             break;
             case S_STRING_ESCAPE:
@@ -517,7 +516,7 @@ char get_char(scanner_t* scanner){
     }
 
     int n = fscanf(scanner->f_input, "%c", &c);
-    // printf("got char: %c in state %d\n", c, scanner->state);
+    printf("got char: %c in state %d\n", c, scanner->state);
     scanner->prev_char = scanner->cur_char;
     scanner->cur_char = c;
     if(n <= 0){
