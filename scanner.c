@@ -22,7 +22,7 @@ scanner_t* init_scanner(FILE* f_input){
     scanner->rewind = '\0';
     scanner->prev_char = '\0';
     scanner->cur_char = '\0';
-
+    scanner->comm = 0;
     return scanner;
 }
 
@@ -104,6 +104,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 } else if(next_char == '\"'){
                     scanner->state = S_STRING;
                 } else {
+                    *token = init_token(NIL_CONVERT);
                     return LEXICAL_ERROR;
                 }
             break;
@@ -121,6 +122,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(next_char == '/'){
                     scanner->state = S_COMMENT2;
                 } else if (next_char == '*'){
+                    scanner->comm += 1;
                     scanner->state = S_COMMENT3;
                     next_char = get_char(scanner);
                 } else {
@@ -141,18 +143,42 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 }
                 break;
             case S_COMMENT3: //multiline
-            while(next_char != '*'){
-                next_char= get_char(scanner);
-            }
-            if(next_char == '*'){
-                next_char = get_char(scanner);
-                if(next_char == '/'){
-                    scanner->state = S_INIT;
+            
+                if(next_char == '*'){
+                    next_char = get_char(scanner);
+                     if(next_char == '/'){
+                        scanner->comm -= 1;
+                        if(scanner->comm == 0){
+                            scanner->state = S_INIT;
+                            *token = init_token(MULTILINE);
+                            scanner->buffer_pos = 0;
+                            return SUCCESS;
+                        }
+                    }
+                }else if(next_char == '/'){
+                    next_char = get_char(scanner);
+                    if(next_char == '*'){
+                        scanner->comm += 1;
+                    }
+                }else if(next_char == '\0'){
                     *token = init_token(MULTILINE);
-                    scanner->buffer_pos = 0;
-                    return SUCCESS;
+                    return LEXICAL_ERROR;
                 }
-            }
+                next_char = get_char(scanner);
+
+
+            // while(next_char != '*'){
+            //     next_char= get_char(scanner);
+            // }
+            // if(next_char == '*'){
+            //     next_char = get_char(scanner);
+            //     if(next_char == '/'){
+            //         scanner->state = S_INIT;
+            //         *token = init_token(MULTILINE);
+            //         scanner->buffer_pos = 0;
+            //         return SUCCESS;
+            //     }
+            // }
             break;
             break;
             case S_STRING:
@@ -516,7 +542,7 @@ char get_char(scanner_t* scanner){
     }
 
     int n = fscanf(scanner->f_input, "%c", &c);
-    printf("got char: %c in state %d\n", c, scanner->state);
+    // printf("got char: %c in state %d\n", c, scanner->state);
     scanner->prev_char = scanner->cur_char;
     scanner->cur_char = c;
     if(n <= 0){

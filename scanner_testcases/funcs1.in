@@ -1,5 +1,5 @@
 func bar(with param : String) -> String {
-let r : String = foo(param)
+let r : String =https://www.fit.vutbr.cz/study/courses/IFJ/private/projekt/ifj2023.pdf#section.6 foo(param)
 return r
 }
 func foo(_ par : String) -> String {

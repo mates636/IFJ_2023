@@ -90,6 +90,7 @@ typedef struct scanner_t{
     char rewind;
     char prev_char;
     char cur_char;
+    int comm;
 }scanner_t;
 
 error_t get_token(scanner_t* scanner,token_t** token);
