@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #iclude "scanner.h"
 
-#define LX_ERROR 1
-#define IT_ERROR 99
-
 typedef struct stack_item stack_item_t;
 struct stack_item{
   stack_item_t* next_item;
@@ -89,9 +86,9 @@ void Push_token_stack(token_stack_t* stack, token_t value_token);
 /**
 * Pop item ze stacku, pokud je stack prazdny bereme nasledujici token
 */
-token_t Pop_token_stack(token_stack_t* stack, int* err);
+token_t Pop_token_stack(token_stack_t* stack);
 
 /**
 * Top item ze stacku, pokud je stack prazdny bereme nasledujici token
 */
-token_t Top_token_stack(token_stack_t* stack, int* err);
+token_t Top_token_stack(token_stack_t* stack);
