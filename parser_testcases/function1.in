@@ -1,3 +1,5 @@
 func foo(a b : String) -> String{
-    
+    var c  : Int
+    c = 1
+    return c
 }

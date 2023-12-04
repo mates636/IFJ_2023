@@ -1,5 +1,6 @@
-1 "a"
-15
-7 "ahoj"
-32
-8
+token type: 1 
+token data: "a" 
+token type: 19 
+token type: 10 
+token data: "ahoj" 
+token type: 11 

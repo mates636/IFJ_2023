@@ -30,9 +30,6 @@ error_t get_token(scanner_t* scanner,token_t** token){
     while(1){
         
         char next_char;
-        // printf("1%c\n", next_char);
-
-        // printf("2%c\n", scanner->prev_char);
         // printf("state: %d \n", scanner->state);
         switch(scanner->state){
             case S_INIT:
@@ -165,20 +162,6 @@ error_t get_token(scanner_t* scanner,token_t** token){
                     return LEXICAL_ERROR;
                 }
                 next_char = get_char(scanner);
-
-
-            // while(next_char != '*'){
-            //     next_char= get_char(scanner);
-            // }
-            // if(next_char == '*'){
-            //     next_char = get_char(scanner);
-            //     if(next_char == '/'){
-            //         scanner->state = S_INIT;
-            //         *token = init_token(MULTILINE);
-            //         scanner->buffer_pos = 0;
-            //         return SUCCESS;
-            //     }
-            // }
             break;
             break;
             case S_STRING:
@@ -330,10 +313,6 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_digit(next_char)){
                     scanner->rewind = next_char;
                     scanner->state = S_DOUBLE;
-                // }else if(is_digit(next_char) != 1){
-                // printf("cisloasd2 %c\n", next_char);
-
-                //     return LEXICAL_ERROR;
                 }else{
                     scanner->state = S_INIT;
                     *token = init_token_data(DOUBLE, scanner->buffer, scanner->buffer_pos);
@@ -381,7 +360,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 if(is_digit(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIER;
-                } else if(is_letter(next_char)){
+                } else if(is_letter(next_char) || next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
                 } else if (next_char == '?'){
@@ -413,7 +392,6 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
                         scanner->rewind = next_char;
                         scanner->buffer_pos = 0;
-                        
                         return SUCCESS;
                     }
                 }
@@ -426,6 +404,7 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 }else{
                     scanner->state = S_INIT;
                     *token = init_token_data(IDENTIFIER, scanner->buffer, scanner->buffer_pos);
+                    scanner->rewind = next_char;
                     scanner->buffer_pos = 0;
                     return SUCCESS;
                 }

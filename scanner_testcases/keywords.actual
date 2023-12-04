@@ -1,3 +1,6 @@
-11 "String"
-32
-chyba 1
+token type: 14 
+token data: "String" 
+token type: 36 
+token type: 14 
+token data: "Int?" 
+token type: 11 

@@ -4,6 +4,9 @@
 #ifndef PARSER_C
 #define PARSER_C 
 #define CHECKERROR(error) if ((error) != 0) return error; 
+// if(error != 0){
+//     return error;
+// }
 
 scope_stack *stack;//symtable
 par_stack *p_stack;
@@ -169,6 +172,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
                 return parser_if_or_while_statement(scanner, token, true);
             }else if(strcmp(token->data, "while") == 0){
                 return parser_if_or_while_statement(scanner, token, false);
+            }else if(strcmp(token->data, "return") == 0){
+                return parser_return(scanner, token);
             }else{
                 return SYNTAX_ERROR;
             }
@@ -176,8 +181,8 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             return SUCCESS;
         case COMMENT:
             return SUCCESS;
-            case MULTILINE:
-        return SUCCESS;
+        case MULTILINE:
+            return SUCCESS;
         // case IDENTIFIER:
         //     char* func_name = string_copy(token->data);
             //todo free idk
@@ -1259,11 +1264,20 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     
 
 
-
     error = run_parser(scanner);
     if(error != SUCCESS){
         return error;
     }
+    // error = get_token(scanner, &token);
+    // CHECKERROR(error)
+    // if(function->params->param_type != Void){
+    //     printf("%c\n", function->params->param_type);
+    //     if(token->data != "return"){
+    //         return SYNTAX_ERROR;
+    //     }
+    // }
+    
+
 
     scope_stack_pop(stack);
 
@@ -1382,26 +1396,25 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
 
 error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
+    sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
     
-    error = get_token(scanner, &token);
-    CHECKERROR(error)
+    // error = get_token(scanner, &token);
+    // CHECKERROR(error)
 
-    if(token->data != "return"){
-        return SYNTAX_ERROR;
+    variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
+    bool if_while_condition = false;
+    error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
+    // printf("%d\n", error);
+    // printf("%d\n", function->return_type);
+    // printf("%d\n", *type_of_variable );
+    if(error != SUCCESS){
+        return error;
     }
-    error = get_token(scanner, &token);
-    CHECKERROR(error)
 
-    if(token->type != RIGHT_BR){
-        return SYNTAX_ERROR;
-    }
-    //TODO
-    //zavolame vyhodnoceni vyrazu
     return SUCCESS;
 }
- // if(error != 0){
-//     return error;
-// }
+
+
 
 error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type required_return_type){
     error_t error;

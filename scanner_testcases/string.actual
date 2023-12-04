@@ -1,8 +1,9 @@
-7 "asd44s"
-32
-7 "adsd\""
-32
-7 "s2\n"
-32
-7 "sad\rasdf"
-8
+token type: 10 
+token data: "asd44s" 
+token type: 10 
+token data: "adsd\"" 
+token type: 10 
+token data: "s2\n" 
+token type: 10 
+token data: "sad\rasdf" 
+token type: 11 

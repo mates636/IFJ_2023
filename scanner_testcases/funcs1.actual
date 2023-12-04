@@ -1,61 +1,86 @@
-11 "func"
-1 "bar"
-5
-1 "with"
-1 "param"
-12
-11 "String"
-6
-28
-11 "String"
-14
-32
-1 "let"
-1 "r"
-12
-11 "String"
-15
-1 "foo"
-5
-1 "param"
-6
-32
-11 "return"
-11 "r"
-32
-13
-32
-1 "func"
-1 "foo"
-5
-1 "_"
-1 "par"
-12
-11 "String"
-6
-28
-11 "String"
-14
-32
-1 "let"
-1 "ret"
-15
-1 "bar"
-5
-1 "with"
-12
-1 "par"
-6
-32
-11 "return"
-11 "ret"
-32
-13
-32
-1 "bar"
-5
-1 "with"
-12
-7 "ahoj"
-6
-8
+token type: 14 
+token data: "func" 
+token type: 1 
+token data: "bar" 
+token type: 8 
+token type: 1 
+token data: "with" 
+token type: 1 
+token data: "param" 
+token type: 15 
+token type: 14 
+token data: "String" 
+token type: 9 
+token type: 31 
+token type: 14 
+token data: "String" 
+token type: 17 
+token type: 36 
+token type: 14 
+token data: "let" 
+token type: 1 
+token data: "r" 
+token type: 15 
+token type: 14 
+token data: "String" 
+token type: 19 
+token type: 1 
+token data: "https" 
+token type: 15 
+token type: 32 
+token type: 14 
+token data: "return" 
+token type: 1 
+token data: "r" 
+token type: 36 
+token type: 16 
+token type: 36 
+token type: 14 
+token data: "func" 
+token type: 1 
+token data: "foo" 
+token type: 8 
+token type: 37 
+token data: "_" 
+token type: 1 
+token data: "par" 
+token type: 15 
+token type: 14 
+token data: "String" 
+token type: 9 
+token type: 31 
+token type: 14 
+token data: "String" 
+token type: 17 
+token type: 36 
+token type: 14 
+token data: "let" 
+token type: 1 
+token data: "ret" 
+token type: 19 
+token type: 1 
+token data: "bar" 
+token type: 8 
+token type: 1 
+token data: "with" 
+token type: 15 
+token type: 1 
+token data: "par" 
+token type: 9 
+token type: 36 
+token type: 14 
+token data: "return" 
+token type: 1 
+token data: "ret" 
+token type: 36 
+token type: 16 
+token type: 36 
+token type: 1 
+token data: "bar" 
+token type: 8 
+token type: 1 
+token data: "with" 
+token type: 15 
+token type: 10 
+token data: "ahoj" 
+token type: 11 

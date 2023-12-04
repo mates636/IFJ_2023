@@ -1,16 +1,24 @@
-1 "a"
-15
-10 "12.33"
-32
-1 "b"
-15
-10 "12e21"
-32
-1 "c"
-15
-10 "12.3e+33"
-32
-1 "d"
-15
-9 "0"
-8
+token type: 1 
+token data: "a" 
+token type: 19 
+token type: 13 
+token data: "12.33" 
+token type: 36 
+token type: 1 
+token data: "b" 
+token type: 19 
+token type: 13 
+token data: "12e21" 
+token type: 36 
+token type: 1 
+token data: "c" 
+token type: 19 
+token type: 13 
+token data: "12.3e+33" 
+token type: 36 
+token type: 1 
+token data: "d" 
+token type: 19 
+token type: 12 
+token data: "0" 
+token type: 11 
