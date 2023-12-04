@@ -30,27 +30,27 @@ bool Empty_stack(int_stack_item_t* stack);
 /**
 * Pushne pointr
 */
-void Push_stack(int_stack_item_t* stack, int* value_item);
+void Push_stack(int_stack_item_t* stack, int* value);
 
 /**
 * Popne item
 */
-bool Pop_stack(int_stack_item_t* stack, int* value_item);
+bool Pop_stack(int_stack_item_t* stack, int* value);
 
 /**
 * Vrati top item ze stacku
 */
-bool Top_stack(int_stack_item_t* stack, int* value_item);
+bool Top_stack(int_stack_item_t* stack, int* value);
 
 /**
 * Vrati pocet
 */
-bool Count_stack(int_stack_item_t* stack, int* value_item);
+bool Count_stack(int_stack_item_t* stack, int* value);
 
 /**
 * Vrati offset
 */
-bool Offset_stack(int_stack_item_t* stack, int* value_item, int num);
+bool Offset_stack(int_stack_item_t* stack, int* value, int num);
 
 typedef struct token_item_stack token_item_stack_t;
 struct token_item_stack{
