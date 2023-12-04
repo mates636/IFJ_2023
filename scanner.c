@@ -35,72 +35,116 @@ error_t get_token(scanner_t* scanner,token_t** token){
             case S_INIT:
                 next_char = get_char(scanner);
                 // printf("init got char %c\n", next_char);
+                // Konec
                 if(next_char == '\0'){
                     *token = init_token(EOF_TYPE);
                     return SUCCESS;
                 }
+                // Mezera
                 if(is_white(next_char)){
                     scanner->state = S_INIT;
-                }else if(next_char == '\n'){
+                }
+                // Konec řádku
+                else if(next_char == '\n'){
                     *token = init_token(NEW_LINE);
                     return SUCCESS;
-                } else if(next_char == '{'){
+                } 
+                // Levá závorka "funkce"
+                else if(next_char == '{'){
                     *token = init_token(LEFT_BR);
                     return SUCCESS;
-                } else if(next_char == '}'){
+                } 
+                // Pravá závorka "funkce"    
+                else if(next_char == '}'){
                     *token = init_token(RIGHT_BR);
                     return SUCCESS;
-                } else if(next_char == '='){
+                } 
+                // Rovná se
+                else if(next_char == '='){
                     add_char(next_char, scanner);
                     scanner->state = S_EQUALS;
-                } else if(next_char == ','){
+                } 
+                // Čárka
+                else if(next_char == ','){
                     *token = init_token(COMMA);
                     return SUCCESS;
-                } else if(next_char == '/'){
+                }
+                // Komentář
+                else if(next_char == '/'){
                     add_char(next_char, scanner);
                     scanner->state = S_COMMENT;
-                } else if(next_char == '+'){
+                }
+                // Sčítání 
+                else if(next_char == '+'){
                     *token = init_token(PLUS);
                     return SUCCESS;
-                } else if(next_char == '*'){
+                } 
+                // Násobení
+                else if(next_char == '*'){
                     *token = init_token(MULTIPLY);
                     return SUCCESS;
-                } else if(next_char == '('){
+                } 
+                // Levá závorka
+                else if(next_char == '('){
                     *token =  init_token(LEFT_PAR);
                     return SUCCESS;
-                } else if(next_char == ')'){
+                } 
+                // Pravá závorka
+                else if(next_char == ')'){
                     *token =  init_token(RIGHT_PAR);
                     return SUCCESS;
-                } else if(next_char == '<'){
+                } 
+                // Menší než
+                else if(next_char == '<'){
                     add_char(next_char, scanner);
                     scanner->state = S_LESS;
-                } else if(next_char == '>'){
+                } 
+                 // Větší než
+                else if(next_char == '>'){
                     add_char(next_char, scanner);
                     scanner->state = S_MORE;
-                } else if(next_char == '-'){
+                } 
+                 // Návratový typ
+                else if(next_char == '-'){
                     add_char(next_char, scanner);
                     scanner->state = S_RETURN_TYPE;
-                } else if(next_char == '?'){
+                } 
+                //Speciální typ nil 
+                else if(next_char == '?'){
                     add_char(next_char, scanner);
                     scanner->state = S_NIL_CONVERT;
-                } else if(next_char == ':'){
+                } 
+                //přiřazovač dat typu
+                else if(next_char == ':'){
                     *token = init_token(COLON);
                     return SUCCESS;
-                } else if(next_char == '!'){
+                } 
+                // nerovna se
+                else if(next_char == '!'){
                     add_char(next_char, scanner);
                     scanner->state = S_NOTEQUALS;
-                } else if(is_letter(next_char)){
+                } 
+                // písmeno
+                else if(is_letter(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
-                } else if(next_char == '_'){
+                } 
+                // Podtržítko
+                else if(next_char == '_'){
                     add_char(next_char, scanner);
                     scanner->state = S_IDENTIFIERORKEYWORD;
-                } else if(is_digit(next_char)){
+                } 
+                // číslo
+                else if(is_digit(next_char)){
                     add_char(next_char, scanner);
                     scanner->state = S_INT;
-                } else if(next_char == '\"'){
+                } 
+                // STRING
+                else if(next_char == '\"'){
                     scanner->state = S_STRING;
-                } else {
+                } 
+                // error
+                else {
                     *token = init_token(NIL_CONVERT);
                     return LEXICAL_ERROR;
                 }
