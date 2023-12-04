@@ -1188,7 +1188,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     return SUCCESS;   
 }
 
-
+// function -> func function_id (param_name param_id : param_type) -> return_type
 error_t parser_function(scanner_t *scanner, token_t *token){
     error_t error;
     sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
@@ -1204,8 +1204,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
 
     bst_node *identifier = bst_search(stack->stack_array[0], token->data);
     if(identifier != NULL){
-        // //printf("definovany\n");
-        return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR; //TODO
+        return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
     }
     function->id = malloc(strlen(token->data) + 1);
     strcpy(function->id, token->data);
@@ -1217,7 +1216,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
         return SYNTAX_ERROR;
     }
 
-    // //kontrola argumentu funkce
+    //kontrola argumentu funkce
     error = parser_argument(scanner, token, function);
 
     if(error != SUCCESS){
@@ -1261,8 +1260,6 @@ error_t parser_function(scanner_t *scanner, token_t *token){
             insert_variable_data(identifier, "SIMULATION");
         }
     }
-    
-
 
     error = run_parser(scanner);
     if(error != SUCCESS){
@@ -1276,16 +1273,15 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     //         return SYNTAX_ERROR;
     //     }
     // }
-    
-
 
     scope_stack_pop(stack);
-
-    
 
     return SUCCESS;
 }
 
+
+// function parameter check
+// param_name para_id : param_type -> next_param
 error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
     bst_node* arg_tree;
@@ -1301,6 +1297,7 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         } else {
             struktura->params = (sym_t_param*)realloc(struktura->params,sizeof(sym_t_param) * (struktura->num_params + 1));
         }
+        //check param_name
         if(token->type != IDENTIFIER){
             return SYNTAX_ERROR;
         }
@@ -1309,7 +1306,7 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         strcpy(struktura->params->param_name, token->data);
         error = get_token(scanner, &token);
         CHECKERROR(error)
-
+        //check param_id
         if(token->type != IDENTIFIER){
             return SYNTAX_ERROR;
         }
@@ -1324,12 +1321,14 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         error = get_token(scanner, &token);
         CHECKERROR(error)
 
+        //check colon
         if(token->type != COLON){
             return SYNTAX_ERROR;
         }
         error = get_token(scanner, &token);
         CHECKERROR(error)
 
+        //check param_return_type
         if(token->type != KEYWORD){
             return SYNTAX_ERROR;
         }
@@ -1344,11 +1343,12 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
         error = get_token(scanner, &token);
         CHECKERROR(error)
 
+        //check if there is more parameters
         if(token->type == COMMA){
         error = get_token(scanner, &token);
         CHECKERROR(error)
 
-
+        //end of parameter
         } else if(token->type == RIGHT_PAR){
             break;
         } else {
@@ -1362,12 +1362,16 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
     return SUCCESS;
 }
 
+
+// function return_type check
+// -> return_type
 error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *struktura){
     error_t error;
     
     error = get_token(scanner, &token);
     CHECKERROR(error)
 
+    //check return_type
     if(token->type != RETURN_TYPE){
         struktura->return_type = Void;
     } else {
@@ -1394,6 +1398,9 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
     return SUCCESS;
 }
 
+
+// function return check
+// return expression
 error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
     sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
@@ -1401,6 +1408,7 @@ error_t parser_return(scanner_t *scanner, token_t *token){
     // error = get_token(scanner, &token);
     // CHECKERROR(error)
 
+    //check if type of expression is same as function return_type
     variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
     bool if_while_condition = false;
     error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
@@ -1414,8 +1422,8 @@ error_t parser_return(scanner_t *scanner, token_t *token){
     return SUCCESS;
 }
 
-
-
+// function call check
+// function_id(parameters)
 error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type required_return_type){
     error_t error;
     token_t *token;
@@ -1425,6 +1433,7 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
     fun_call.id = string_copy(func_name);
     error = get_token(scanner, &token);
     CHECKERROR(error)
+
     if(token->type != RIGHT_PAR){
         while (1)
         {
@@ -1516,8 +1525,10 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
         }
         
     }
-        add_fun_call(&fun_call);
-      return SUCCESS;
+
+    //add function_call
+    add_fun_call(&fun_call);
+    return SUCCESS;
 
     }
 
@@ -1540,6 +1551,7 @@ bool check_type_compatibility(variable_type def, variable_type val){
 
 }
 
+//check if parameters of function call are same as function parameters
 error_t fun_calls_handler(){
     for(int i = 0; i < fun_calls_num; i++){
         bst_node *node = bst_search(stack->stack_array[0], fun_calls[i].id);

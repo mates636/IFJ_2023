@@ -1,0 +1,2 @@
+var x : Int
+let result = x + y
