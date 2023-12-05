@@ -303,13 +303,13 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 
         //inserting type of variable
         insert_variable_type(tree_node, token->data);
+        
 
         //assignment or another expression
         error = get_token(scanner, &token);
         if(error != SUCCESS){
             return error;
         }
-
         if(parser_assignment(token) != SUCCESS){
             if(token->type != NEW_LINE){
                 return SYNTAX_ERROR;
@@ -317,7 +317,6 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
                 return SUCCESS;
             }
         }
-
     }
     
     //there is no data type 
@@ -330,7 +329,8 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
 
         error_t error;
         valid_expression = true;
-        token_t *token_to_pass;
+        token_t *token_to_pass = (token_t*)malloc(sizeof(token_t));
+        token_to_pass->type = UNKNOWN;
         variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
         (*type_of_variable) = Not_specified;
         bool if_while_condition = false;
@@ -340,18 +340,18 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         CHECKERROR(error);  
         if(token->type == IDENTIFIER){
             size_t len = strlen(token->data) + 1;
+            free(token_to_pass);
             token_to_pass = init_token_data(token->type, token->data, len);
 
             error = get_token(scanner, &token);
             CHECKERROR(error);
-
             if(token->type == LEFT_PAR){
                 error = parser_id_assignment_function(scanner, token, token_to_pass, tree_node->variable_type);
                 destroy_token(token_to_pass);
                 return error;
             }
         }
-
+        
         //it was variable - calling expression
         error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, &token_to_pass);
         if(error != SUCCESS){
@@ -619,7 +619,7 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
 
 error_t parser_expression_type_control_rel_operators(token_t *token, variable_type *type_control, token_type_t type_token){
     bst_node *id;
-    
+    printf("%d\n", (*type_control));
     //first value in expression
     if((*type_control) == Not_specified){
         return parser_expression_type_control_first_value(token, type_control);
@@ -898,6 +898,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     //type for expression control
     expression_type = (variable_type*)malloc(sizeof(variable_type));
     expression_type_par = (variable_type*)malloc(sizeof(variable_type));
+    (*expression_type) = Not_specified;
+    (*expression_type_par) = Not_specified;
     
     //stack for precedence
     expression_s *expression_stack = expression_stack_init();
@@ -912,7 +914,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     int token_from_prev_fun = 0;
     token_t *tmp;
     if(token_to_pass != NULL){
-        if((*token_to_pass) != UNKNOWN){
+        if((*token_to_pass)->type != UNKNOWN){
             //got someting in token and token_to_pass from id = ..
             token_from_prev_fun = 2;
         }else{
@@ -920,19 +922,19 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             token_from_prev_fun = 1;
             tmp = token;
         }
-    printf("token_to_pass_type: %d\n", (*token_to_pass)->type);
-    printf("token_to_pass_data: %s\n", (*token_to_pass)->data);
-    printf("token_from_prev fun: %d\n", token_from_prev_fun);
+    //printf("token_to_pass_type: %d\n", (*token_to_pass)->type);
+    //printf("token_to_pass_data: %s\n", (*token_to_pass)->data);
+    //printf("token_from_prev fun: %d\n", token_from_prev_fun);
     }
  
     //processing expression
     while(true){
 
- if(token_from_prev_fun = 2){
+        if(token_from_prev_fun == 2){
             tmp = token;
             token = (*token_to_pass);
             token_from_prev_fun = 1;
-        }else if(token_from_prev_fun = 1){
+        }else if(token_from_prev_fun == 1){
             token = tmp;
             token_from_prev_fun = 0;
         }else{
@@ -943,8 +945,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             }
         }
 
-        printf("token_type: %d\n", token->type);
-        printf("token_data: %s\n", token->data); 
+        //printf("expression_token_type: %d\n", token->type);
+        //printf("expression_token_data: %s\n", token->data); 
 
         ///////////////got (
         if((token->type == LEFT_PAR)){
@@ -1252,34 +1254,37 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         return SYNTAX_ERROR;
     }  
 
-
     //syntax let in if or while statement
-    if(strcmp(token->data, "let") == 0){
-        error = get_token(scanner, &token);
-            if(error != SUCCESS){
-                return error;
-            }
+    if(token->type == KEYWORD){
+        if(strcmp(token->data, "let") == 0){
+            error = get_token(scanner, &token);
+                if(error != SUCCESS){
+                    return error;
+                }
 
-        if(token->type != IDENTIFIER){
-            return SYNTAX_ERROR;
-        }else{
-            variable = search_variable_in_all_scopes(stack, token->data);
-            if(variable == NULL){
-                return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-            }
-            if(variable->data == NULL){
-                return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-            }
-            if(variable->node_data_type != VARIABLE_LET){
-                SEMANTIC_ERROR_OTHERS;
-            }
+            if(token->type != IDENTIFIER){
+                return SYNTAX_ERROR;
+            }else{
+                variable = search_variable_in_all_scopes(stack, token->data);
+                if(variable == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+                if(variable->data == NULL){
+                   // printf("here\n");
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
 
-            (*if_while_condition) = true;
-            (*token_to_pass) = token;
-            return SUCCESS;
+                if(variable->node_data_type != VARIABLE_LET){
+                    return SEMANTIC_ERROR_OTHERS;
+                }
+
+                (*if_while_condition) = true;
+                (*token_to_pass) = token;
+                return SUCCESS;
+            }
         }
-    }
-
+    } 
+    
     //pop the expression stack
     while(true){
         error = expression_compose(&expression_stack, expression_type);
@@ -1773,7 +1778,6 @@ error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if
             break;
         }
     }
-
     error = parser_expression(scanner, token, Not_specified, &if_while, true, &token_to_pass);
     if(error != SUCCESS){
         return error;
