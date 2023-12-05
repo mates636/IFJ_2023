@@ -6,7 +6,8 @@
 #ifndef ERROR_CODE
 #define ERROR_CODE
 
-typedef enum error_t{
+typedef enum error_t
+{
     SUCCESS = 0,
     LEXICAL_ERROR = 1,
     SYNTAX_ERROR = 2,
@@ -18,6 +19,6 @@ typedef enum error_t{
     SEMANTIC_ERROR_TYPE_CANNOT_INFERRED = 8,
     SEMANTIC_ERROR_OTHERS = 9,
     INTERN_ERROR = 99
-}error_t;
+} error_t;
 
-#endif 
+#endif

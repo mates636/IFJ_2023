@@ -1254,7 +1254,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
         return SYNTAX_ERROR;
     }  
 
-    //syntax let in if or while statement
+    //syntax let in if or while statement 
     if(token->type == KEYWORD){
         if(strcmp(token->data, "let") == 0){
             error = get_token(scanner, &token);
