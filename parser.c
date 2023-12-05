@@ -431,7 +431,27 @@ error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_
      if(is_it_built_in_function(function_id->data) == true){
         return parser_built_in_function(scanner, token, function_id->data, variable);
     }else{
-        //TO DO not specified
+        bst_node *function = search_variable_in_all_scopes(stack, function_id->data);
+        variable_type fun_type =  ((sym_t_function*)function->data)->return_type;
+        if(variable->variable_type == Int_nil){
+            if(fun_type != Int && fun_type != Int_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }else if(variable->variable_type == Double_nil){
+            if(fun_type != Double && fun_type != Double_nil){
+                return  SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }else if(variable->variable_type == String_nil){
+            if(fun_type != String && fun_type != String_nil){
+                return  SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }else if(variable->variable_type == Not_specified){
+            variable->variable_type = fun_type;
+        }else{
+            if(variable->variable_type != fun_type){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }
         return parser_function_call(scanner, function_id->data, Not_specified);
     }
 }
@@ -2321,21 +2341,21 @@ error_t built_in_lenght(scanner_t *scanner, token_t *token, bst_node *var){
     }
 }
 
-error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param){
+error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param, token_type_t token_type1, token_type_t token_type2){
     error_t error;
     bst_node *param_variable;
 
     //name of parametr
     error = get_token(scanner, &token);
     CHECKERROR(error);
-    if(token->type != STRING){
-        return SYNTAX_ERROR;
-    }else{
-        if(strcmp(token->data, name_of_param) != 0){
-            return SYNTAX_ERROR;
-        }
+    if(token->data == NULL){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
     }
 
+    if(strcmp(token->data, name_of_param) != 0){
+        return SYNTAX_ERROR;
+    }
+    
     //colon
     error = get_token(scanner, &token);
     CHECKERROR(error);
@@ -2346,7 +2366,7 @@ error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param){
     //parametr
     error = get_token(scanner, &token);
     CHECKERROR(error);
-    if(token->type == STRING){
+    if(token->type == token_type1){
 
     }else if(token->type == IDENTIFIER){
         param_variable = search_variable_in_all_scopes(stack, token->data);
@@ -2359,7 +2379,7 @@ error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param){
         if(param_variable->variable_type != String){
             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
         }
-    }else if (token->type == INT || token->type == DOUBLE){
+    }else if (token->type == token_type2 || token->type == DOUBLE){
         return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
     }else if(token->type == KEYWORD){
         if(strcmp(token->data, "nil") == 0){
@@ -2370,6 +2390,7 @@ error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param){
     }else{
         return SYNTAX_ERROR;
     }
+    return SUCCESS;  
 }
 
 error_t built_in_substring(scanner_t *scanner, token_t *token, bst_node *var){
@@ -2389,27 +2410,35 @@ error_t built_in_substring(scanner_t *scanner, token_t *token, bst_node *var){
         }
     }
 
-    error = check_param(scanner, token, "of");
+    error = check_param(scanner, token, "of", STRING, INT);
     CHECKERROR(error);
     
     //comma
     error = get_token(scanner, &token);
     CHECKERROR(error);
-    if(token->type != COMMA){
+    if(token->type == COMMA){
+        
+    }else if(token->type == RIGHT_PAR){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else{
         return SYNTAX_ERROR;
     }
 
-    error = check_param(scanner, token, "startingAt");
+    error = check_param(scanner, token, "startingAt", INT, STRING);
     CHECKERROR(error);
     
     //comma
     error = get_token(scanner, &token);
     CHECKERROR(error);
-    if(token->type != COMMA){
+    if(token->type == COMMA){
+        
+    }else if(token->type == RIGHT_PAR){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else{
         return SYNTAX_ERROR;
     }
 
-    error = check_param(scanner, token, "endingBefore");
+    error = check_param(scanner, token, "endingBefore", INT, STRING);
     CHECKERROR(error);
     
     error = get_token(scanner, &token);
