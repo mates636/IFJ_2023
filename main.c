@@ -14,8 +14,12 @@ int main(int argc, char** argv){
     FILE* source = stdin; // stdin
     scanner_t* scanner = init_scanner(source);
     init_parser();
-    error_t error = run_parser(scanner);
-    free_parser();
+    token_t *token;
+    error_t error = run_parser(scanner, token);
+    if(error != SUCCESS){
+        return error;
+    }
+    error = free_parser();
     fclose(source);
     return error;
 }

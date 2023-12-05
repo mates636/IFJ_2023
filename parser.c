@@ -78,7 +78,7 @@ void init_parser(){
    //init_builtin_function();
 }
 
-void free_parser(){
+error_t free_parser(){
         //cotrol for paranthesis
     if(p_stack->top != -1){
         printf("paranth\n");
@@ -1199,7 +1199,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     want_operator = true;
                 }else if(strcmp(token->data, "let") == 0){
                     if(expression_stack->top == -1){
-                        expression_type = Void;
+                        (*expression_type) = Void;
                         want_VarOrLit = false;
                         want_operator = true;
                         break;
@@ -1887,7 +1887,7 @@ error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_
     }else if(strcmp(func_name, "readDouble") == 0){
         
     }else if(strcmp(func_name, "write") == 0){
-        return built_in_write(scanner, token);
+        //return built_in_write(scanner, token);
     }else if(strcmp(func_name, "Int2Double") == 0){
         
     }else if(strcmp(func_name, "Double2Int") == 0){
@@ -1903,119 +1903,119 @@ error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_
     } 
 }
 
-error_t built_in_readString(scanner_t *scanner, token_t *token){
+// error_t built_in_readString(scanner_t *scanner, token_t *token){
 
-}
+// }
 
-error_t built_in_readInt(scanner_t *scanner, token_t *token){
+// error_t built_in_readInt(scanner_t *scanner, token_t *token){
 
-}
+// }
 
-error_t built_in_readDouble(scanner_t *scanner, token_t *token){
+// error_t built_in_readDouble(scanner_t *scanner, token_t *token){
 
-}
+// }
 
-error_t built_in_write(scanner_t *scanner, token_t *token){
-    error_t error;
-    bst_node *variable;
-    bool need_comma = false;
+// error_t built_in_write(scanner_t *scanner, token_t *token){
+//     error_t error;
+//     bst_node *variable;
+//     bool need_comma = false;
 
-    while(true){
-        error = get_token(scanner, &token);
-        CHECKERROR(error);
-        if(need_comma == true){
-            if(token->type == COMMA){
-                continue;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        }else{
-            if(token->type == INT){
-                int int_to_print = atoi(token->data);
-                printf("%d", int_to_print);
-            }else if(token->type == DOUBLE){
-                double double_to_print;
-                sscanf(token->data, "%lf", &double_to_print);
-                printf("%a", double_to_print);
-            }else if(token->type == STRING){
-                printf("%s", token->data);
-            }else if(token->type == KEYWORD){
-                if(strcmp(token->data, "nil") == 0){
-                    printf("");
-                }else{
-                    return SYNTAX_ERROR;
-                }
-            }else if(token->type == IDENTIFIER){
-                variable = search_variable_in_all_scopes(stack, token->data);
-                if(variable == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }
-                if(variable->data == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }
-                if(variable->variable_type == Nil){
-                    printf("");
-                    continue;
-                }
-                if(variable->variable_type == Int || variable->variable_type == Int_nil){
-                    sym_t_variable *var = (sym_t_variable *)variable->data;
-                    if(strcmp(var->data, "nil") == 0){
-                        printf("");
-                    }else{
-                        int int_to_print = atoi(var->data);
-                        printf("%d", int_to_print);
-                    }
-                }else if(variable->variable_type == Double || variable->variable_type == Double_nil){
-                    sym_t_variable *var = (sym_t_variable *)variable->data;
-                    if(strcmp(var->data, "nil") == 0){
-                        printf("");
-                    }else{
-                        double double_to_print;
-                        sscanf(var->data, "%lf", &double_to_print);
-                        printf("%a", double_to_print);
-                    }
-                }else if(variable->variable_type == String || variable->variable_type == String_nil){
-                    sym_t_variable *var = (sym_t_variable *)variable->data;
-                    if(strcmp(var->data, "nil") == 0){
-                        printf("");
-                    }else{
-                        printf("%s", var->data);
-                    }
-                }
-            }else if(token->type == RIGHT_PAR){
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        }
-    }
-    return SUCCESS;
-}
+//     while(true){
+//         error = get_token(scanner, &token);
+//         CHECKERROR(error);
+//         if(need_comma == true){
+//             if(token->type == COMMA){
+//                 continue;
+//             }else{
+//                 return SYNTAX_ERROR;
+//             }
+//         }else{
+//             if(token->type == INT){
+//                 int int_to_print = atoi(token->data);
+//                 printf("%d", int_to_print);
+//             }else if(token->type == DOUBLE){
+//                 double double_to_print;
+//                 sscanf(token->data, "%lf", &double_to_print);
+//                 printf("%a", double_to_print);
+//             }else if(token->type == STRING){
+//                 printf("%s", token->data);
+//             }else if(token->type == KEYWORD){
+//                 if(strcmp(token->data, "nil") == 0){
+//                     printf("");
+//                 }else{
+//                     return SYNTAX_ERROR;
+//                 }
+//             }else if(token->type == IDENTIFIER){
+//                 variable = search_variable_in_all_scopes(stack, token->data);
+//                 if(variable == NULL){
+//                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+//                 }
+//                 if(variable->data == NULL){
+//                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+//                 }
+//                 if(variable->variable_type == Nil){
+//                     printf("");
+//                     continue;
+//                 }
+//                 if(variable->variable_type == Int || variable->variable_type == Int_nil){
+//                     sym_t_variable *var = (sym_t_variable *)variable->data;
+//                     if(strcmp(var->data, "nil") == 0){
+//                         printf("");
+//                     }else{
+//                         int int_to_print = atoi(var->data);
+//                         printf("%d", int_to_print);
+//                     }
+//                 }else if(variable->variable_type == Double || variable->variable_type == Double_nil){
+//                     sym_t_variable *var = (sym_t_variable *)variable->data;
+//                     if(strcmp(var->data, "nil") == 0){
+//                         printf("");
+//                     }else{
+//                         double double_to_print;
+//                         sscanf(var->data, "%lf", &double_to_print);
+//                         printf("%a", double_to_print);
+//                     }
+//                 }else if(variable->variable_type == String || variable->variable_type == String_nil){
+//                     sym_t_variable *var = (sym_t_variable *)variable->data;
+//                     if(strcmp(var->data, "nil") == 0){
+//                         printf("");
+//                     }else{
+//                         printf("%s", var->data);
+//                     }
+//                 }
+//             }else if(token->type == RIGHT_PAR){
+//                 break;
+//             }else{
+//                 return SYNTAX_ERROR;
+//             }
+//         }
+//     }
+//     return SUCCESS;
+// }
 
-error_t built_in_Int2Double(scanner_t *scanner, token_t *token){
-    error_t error;
-    bst_node *variable;
+// error_t built_in_Int2Double(scanner_t *scanner, token_t *token){
+//     error_t error;
+//     bst_node *variable;
 
-    error = get_token(scanner, &token);
-    CHECKERROR(error);
+//     error = get_token(scanner, &token);
+//     CHECKERROR(error);
 
-    if(token->type == INT){
+//     if(token->type == INT){
 
-    }else if(token->type == IDENTIFIER){
-        variable = search_variable_in_all_scopes(stack, token->data);
-        if(variable == NULL){
-            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-        }
-        if(variable->data == NULL){
-            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-        }
-        if(variable->variable_type != Int){
-            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
-        }
+//     }else if(token->type == IDENTIFIER){
+//         variable = search_variable_in_all_scopes(stack, token->data);
+//         if(variable == NULL){
+//             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+//         }
+//         if(variable->data == NULL){
+//             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+//         }
+//         if(variable->variable_type != Int){
+//             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+//         }
 
-    }else{
-        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
-    }
-}
+//     }else{
+//         return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+//     }
+// }
 
 #endif

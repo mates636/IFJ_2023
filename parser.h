@@ -10,7 +10,7 @@
 #define PARSER_H
 
 void init_parser();
-void free_parser();
+error_t free_parser();
 
 error_t run_parser(scanner_t *scanner, token_t *token);
 error_t parser_analyse(scanner_t *scanner, token_t *token);
