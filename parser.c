@@ -134,6 +134,7 @@ error_t run_parser(scanner_t *scanner, token_t *token){
                 return error;
             }
     }
+
     //print_funcall();
     error = fun_calls_handler();
     if(error != SUCCESS){
@@ -185,6 +186,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             // error_t error;
 
             error = get_token(scanner, &token);
+            CHECKERROR(error);
             if(token->type == LEFT_PAR){
                 if(is_it_built_in_function(func_name) == true){
                     return parser_built_in_function(scanner, token, func_name, NULL);
@@ -434,14 +436,16 @@ error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_
     }
 }
 
-error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name){
+error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name){    
     error_t error;
     bst_node *variable = search_variable_in_all_scopes(stack, var_name);
     if(variable == NULL){
         return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
     }
     if(variable->node_data_type == VARIABLE_LET){
-        return SEMANTIC_ERROR_OTHERS;
+        if(variable->data != NULL){
+            return SEMANTIC_ERROR_OTHERS;
+        }
     }
     if(token->type != ASSIGMENT){
         return SYNTAX_ERROR;
