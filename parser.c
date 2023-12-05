@@ -5,7 +5,7 @@
 #define PARSER_C 
 #define CHECKERROR(error) if ((error) != 0) return error; 
 
-scope_stack *stack;//symtable
+scope_stack *stack; //symtable
 par_stack *p_stack;
 sym_t_function *fun_calls;
 int fun_calls_num;
@@ -187,7 +187,7 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             error = get_token(scanner, &token);
             if(token->type == LEFT_PAR){
                 if(is_it_built_in_function(func_name) == true){
-                    return parser_built_in_function(scanner, token, func_name, Not_specified);
+                    return parser_built_in_function(scanner, token, func_name, NULL);
                 }else{
                     return parser_function_call(scanner, func_name, Not_specified);
                 }
@@ -310,7 +310,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
             return error;
         }
         if(parser_assignment(token) != SUCCESS){
-            if(token->type != NEW_LINE){
+            if(token->type != NEW_LINE && token->type != EOF_TYPE){
                 return SYNTAX_ERROR;
             }else{
                 return SUCCESS;
@@ -347,7 +347,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
             error = get_token(scanner, &token);
             CHECKERROR(error);
             if(token->type == LEFT_PAR){
-                error = parser_id_assignment_function(scanner, token, token_to_pass, tree_node->variable_type);
+                error = parser_id_assignment_function(scanner, token, token_to_pass, tree_node);
                 destroy_token(token_to_pass);
                 return error;
             }
@@ -409,8 +409,9 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
                     insert_variable_data(tree_node, "111.1");
                 }
             }
+
         free(type_of_variable);
-        destroy_token(token_to_pass);
+        free(token_to_pass);
         
         if(error != SUCCESS){
             return error;
@@ -424,9 +425,9 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
     }
 }
 
-error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, variable_type var_type){
+error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, bst_node *variable){
      if(is_it_built_in_function(function_id->data) == true){
-        return parser_built_in_function(scanner, token, function_id->data, var_type);
+        return parser_built_in_function(scanner, token, function_id->data, variable);
     }else{
         //TO DO not specified
         return parser_function_call(scanner, function_id->data, Not_specified);
@@ -465,7 +466,7 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
         error = get_token(scanner, &token);
         CHECKERROR(error);
         if(token->type == LEFT_PAR){
-            error = parser_id_assignment_function(scanner, token, token_to_pass, variable->variable_type);
+            error = parser_id_assignment_function(scanner, token, token_to_pass, variable);
             destroy_token(token_to_pass);
             return error;
         }
@@ -526,6 +527,7 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
                 }
         }
     free(type_of_variable);
+    free(token_to_pass);
     
     if(error != SUCCESS){
         return error;
@@ -1907,144 +1909,652 @@ bool is_it_built_in_function(char *func_name){
         }
 }
 
-error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, variable_type var_type){
+error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, bst_node *variable){
 
     if(strcmp(func_name, "readString") == 0){
-        return SUCCESS;
+        return built_in_readString(scanner, token, variable);
     }else if(strcmp(func_name, "readInt") == 0){
-
+        return built_in_readInt(scanner, token, variable);
     }else if(strcmp(func_name, "readDouble") == 0){
-        
+        return built_in_readDouble(scanner, token, variable);
     }else if(strcmp(func_name, "write") == 0){
-        //return built_in_write(scanner, token);
+        return built_in_write(scanner, token);
     }else if(strcmp(func_name, "Int2Double") == 0){
-        
+        return built_in_Int2Double(scanner, token, variable);
     }else if(strcmp(func_name, "Double2Int") == 0){
-        
+        return built_in_Double2Int(scanner, token, variable);
     }else if(strcmp(func_name, "length") == 0){
-        
+        return built_in_lenght(scanner, token, variable);
     }else if(strcmp(func_name, "substring") == 0){
-        
+        return built_in_substring(scanner, token, variable);
     }else if(strcmp(func_name, "ord") == 0){
-        
+        return built_in_ord(scanner, token, variable);
     }else if(strcmp(func_name, "chr") == 0){
-        
+        return built_in_chr(scanner, token, variable);
     } 
 }
 
-// error_t built_in_readString(scanner_t *scanner, token_t *token){
+ error_t built_in_readString(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
 
-// }
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != String_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "simulation");
+            }
+        }else{
+            var->variable_type = String_nil;
+            insert_variable_data(var, "simulation");
+        }
+    }
 
-// error_t built_in_readInt(scanner_t *scanner, token_t *token){
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
 
-// }
+    if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+    }else{
+        return SYNTAX_ERROR;
+    }
+ }
 
-// error_t built_in_readDouble(scanner_t *scanner, token_t *token){
+ error_t built_in_readInt(scanner_t *scanner, token_t *token, bst_node *var){
+     error_t error;
 
-// }
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Int_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "111");
+            }
+        }else{
+            var->variable_type = Int_nil;
+            insert_variable_data(var, "111");
+        }
+    }
 
-// error_t built_in_write(scanner_t *scanner, token_t *token){
-//     error_t error;
-//     bst_node *variable;
-//     bool need_comma = false;
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
 
-//     while(true){
-//         error = get_token(scanner, &token);
-//         CHECKERROR(error);
-//         if(need_comma == true){
-//             if(token->type == COMMA){
-//                 continue;
-//             }else{
-//                 return SYNTAX_ERROR;
-//             }
-//         }else{
-//             if(token->type == INT){
-//                 int int_to_print = atoi(token->data);
-//                 printf("%d", int_to_print);
-//             }else if(token->type == DOUBLE){
-//                 double double_to_print;
-//                 sscanf(token->data, "%lf", &double_to_print);
-//                 printf("%a", double_to_print);
-//             }else if(token->type == STRING){
-//                 printf("%s", token->data);
-//             }else if(token->type == KEYWORD){
-//                 if(strcmp(token->data, "nil") == 0){
-//                     printf("");
-//                 }else{
-//                     return SYNTAX_ERROR;
-//                 }
-//             }else if(token->type == IDENTIFIER){
-//                 variable = search_variable_in_all_scopes(stack, token->data);
-//                 if(variable == NULL){
-//                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-//                 }
-//                 if(variable->data == NULL){
-//                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-//                 }
-//                 if(variable->variable_type == Nil){
-//                     printf("");
-//                     continue;
-//                 }
-//                 if(variable->variable_type == Int || variable->variable_type == Int_nil){
-//                     sym_t_variable *var = (sym_t_variable *)variable->data;
-//                     if(strcmp(var->data, "nil") == 0){
-//                         printf("");
-//                     }else{
-//                         int int_to_print = atoi(var->data);
-//                         printf("%d", int_to_print);
-//                     }
-//                 }else if(variable->variable_type == Double || variable->variable_type == Double_nil){
-//                     sym_t_variable *var = (sym_t_variable *)variable->data;
-//                     if(strcmp(var->data, "nil") == 0){
-//                         printf("");
-//                     }else{
-//                         double double_to_print;
-//                         sscanf(var->data, "%lf", &double_to_print);
-//                         printf("%a", double_to_print);
-//                     }
-//                 }else if(variable->variable_type == String || variable->variable_type == String_nil){
-//                     sym_t_variable *var = (sym_t_variable *)variable->data;
-//                     if(strcmp(var->data, "nil") == 0){
-//                         printf("");
-//                     }else{
-//                         printf("%s", var->data);
-//                     }
-//                 }
-//             }else if(token->type == RIGHT_PAR){
-//                 break;
-//             }else{
-//                 return SYNTAX_ERROR;
-//             }
-//         }
-//     }
-//     return SUCCESS;
-// }
+    if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+    }else{
+        return SYNTAX_ERROR;
+    }
+ }
 
-// error_t built_in_Int2Double(scanner_t *scanner, token_t *token){
-//     error_t error;
-//     bst_node *variable;
+ error_t built_in_readDouble(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
 
-//     error = get_token(scanner, &token);
-//     CHECKERROR(error);
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Double_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "111.1");
+            }
+        }else{
+            var->variable_type = Double_nil;
+            insert_variable_data(var, "111.1");
+        }
+    }
 
-//     if(token->type == INT){
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
 
-//     }else if(token->type == IDENTIFIER){
-//         variable = search_variable_in_all_scopes(stack, token->data);
-//         if(variable == NULL){
-//             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-//         }
-//         if(variable->data == NULL){
-//             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-//         }
-//         if(variable->variable_type != Int){
-//             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
-//         }
+    if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+    }else{
+        return SYNTAX_ERROR;
+    }
+ }
 
-//     }else{
-//         return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
-//     }
-// }
+ error_t built_in_write(scanner_t *scanner, token_t *token){
+     error_t error;
+     bst_node *variable;
+     bool need_comma = false;
+
+     while(true){
+         error = get_token(scanner, &token);
+         CHECKERROR(error);
+         if(token->type == RIGHT_PAR){
+            break;
+         }else{
+         if(need_comma == true){
+             if(token->type == COMMA){
+                need_comma = false;
+                 continue;
+             }else{
+                 return SYNTAX_ERROR;
+             }
+         }else{
+             if(token->type == INT){
+                 int int_to_print = atoi(token->data);
+                 //printf("%d", int_to_print);
+                 need_comma = true;
+             }else if(token->type == DOUBLE){
+                 double double_to_print;
+                 sscanf(token->data, "%lf", &double_to_print);
+                 //printf("%a", double_to_print);
+                 need_comma = true;
+             }else if(token->type == STRING){
+                 //printf("%s", token->data);
+                 need_comma = true;
+             }else if(token->type == KEYWORD){
+                 if(strcmp(token->data, "nil") == 0){
+                     //printf("");
+                     need_comma = true;
+                 }else{
+                     return SYNTAX_ERROR;
+                 }
+             }else if(token->type == IDENTIFIER){
+                need_comma = true;
+                 variable = search_variable_in_all_scopes(stack, token->data);
+                 if(variable == NULL){
+                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                 }
+                 if(variable->data == NULL){
+                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                 }
+                 if(variable->variable_type == Nil){
+                     //printf("");
+                     continue;
+                 }
+                 if(variable->variable_type == Int || variable->variable_type == Int_nil){
+                     sym_t_variable *var = (sym_t_variable *)variable->data;
+                     if(strcmp(var->data, "nil") == 0){
+                         //printf("");
+                     }else{
+                         int int_to_print = atoi(var->data);
+                         //printf("%d", int_to_print);
+                     }
+                 }else if(variable->variable_type == Double || variable->variable_type == Double_nil){
+                     sym_t_variable *var = (sym_t_variable *)variable->data;
+                     if(strcmp(var->data, "nil") == 0){
+                         //printf("");
+                     }else{
+                         double double_to_print;
+                         sscanf(var->data, "%lf", &double_to_print);
+                         //printf("%a", double_to_print);
+                     }
+                 }else if(variable->variable_type == String || variable->variable_type == String_nil){
+                     sym_t_variable *var = (sym_t_variable *)variable->data;
+                     if(strcmp(var->data, "nil") == 0){
+                         //printf("");
+                     }else{
+                         //printf("%s", var->data);
+                     }
+                 }
+             }else{
+                 return SYNTAX_ERROR;
+             }
+         }
+     } 
+     }
+     return SUCCESS;
+ }
+
+ error_t built_in_Int2Double(scanner_t *scanner, token_t *token, bst_node *var){
+     error_t error;
+     bst_node *param_variable;
+    
+     error = get_token(scanner, &token);
+     CHECKERROR(error);
+
+     if(token->type == INT){
+
+     }else if(token->type == IDENTIFIER){
+         param_variable = search_variable_in_all_scopes(stack, token->data);
+         if(param_variable == NULL){
+             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+         }
+         if(param_variable->data == NULL){
+             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+         }
+         if(param_variable->variable_type != Int){
+             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+         }
+     }else if (token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Double && var->variable_type != Double_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, ((sym_t_variable*)param_variable->data)->data);
+            }
+        }else{
+            var->variable_type = Double;
+            insert_variable_data(var, ((sym_t_variable*)param_variable->data)->data);
+        }
+    }
+
+     error = get_token(scanner, &token);
+     CHECKERROR(error);
+     if(token->type == COMMA){
+        error = get_token(scanner, &token);
+        CHECKERROR(error);
+        if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+        }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+       }
+     }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+     }else{
+        return SYNTAX_ERROR;
+     }
+ }
+
+ error_t built_in_Double2Int(scanner_t *scanner, token_t *token, bst_node *var){
+     error_t error;
+     bst_node *param_variable;
+    
+     error = get_token(scanner, &token);
+     CHECKERROR(error);
+
+     if(token->type == DOUBLE){
+
+     }else if(token->type == IDENTIFIER){
+         param_variable = search_variable_in_all_scopes(stack, token->data);
+         if(param_variable == NULL){
+             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+         }
+         if(param_variable->data == NULL){
+             return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+         }
+         if(param_variable->variable_type != Double){
+             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+         }
+     }else if (token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Int && var->variable_type != Int_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, ((sym_t_variable*)param_variable->data)->data);
+            }
+        }else{
+            var->variable_type = Int;
+            insert_variable_data(var, ((sym_t_variable*)param_variable->data)->data);
+        }
+    }
+
+     error = get_token(scanner, &token);
+     CHECKERROR(error);
+     if(token->type == COMMA){
+        error = get_token(scanner, &token);
+        CHECKERROR(error);
+        if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+        }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+       }
+     }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+     }else{
+        return SYNTAX_ERROR;
+     }
+ }
+
+error_t built_in_lenght(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
+    bst_node *param_variable;
+
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Int && var->variable_type != Int_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "111");
+            }
+        }else{
+            var->variable_type = Int;
+            insert_variable_data(var, "111");
+        }
+    }
+
+    error = get_token(scanner, &token);
+     CHECKERROR(error);
+    
+    if(token->type == STRING){
+
+    }else if(token->type == IDENTIFIER){
+        param_variable = search_variable_in_all_scopes(stack, token->data);
+        if(param_variable == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->data == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->variable_type != String){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }
+    }else if (token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type == COMMA){
+       error = get_token(scanner, &token);
+       CHECKERROR(error);
+       if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+           return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+       }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else if(token->type == RIGHT_PAR){
+       return SUCCESS;
+    }else{
+       return SYNTAX_ERROR;
+    }
+}
+
+error_t check_param(scanner_t *scanner, token_t *token, char *name_of_param){
+    error_t error;
+    bst_node *param_variable;
+
+    //name of parametr
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type != STRING){
+        return SYNTAX_ERROR;
+    }else{
+        if(strcmp(token->data, name_of_param) != 0){
+            return SYNTAX_ERROR;
+        }
+    }
+
+    //colon
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type != COLON){
+        return SYNTAX_ERROR;
+    }
+
+    //parametr
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type == STRING){
+
+    }else if(token->type == IDENTIFIER){
+        param_variable = search_variable_in_all_scopes(stack, token->data);
+        if(param_variable == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->data == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->variable_type != String){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }
+    }else if (token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+}
+
+error_t built_in_substring(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
+    bst_node *param_variable;
+    
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != String_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "simulation");
+            }
+        }else{
+            var->variable_type = String_nil;
+            insert_variable_data(var, "simulation");
+        }
+    }
+
+    error = check_param(scanner, token, "of");
+    CHECKERROR(error);
+    
+    //comma
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type != COMMA){
+        return SYNTAX_ERROR;
+    }
+
+    error = check_param(scanner, token, "startingAt");
+    CHECKERROR(error);
+    
+    //comma
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type != COMMA){
+        return SYNTAX_ERROR;
+    }
+
+    error = check_param(scanner, token, "endingBefore");
+    CHECKERROR(error);
+    
+    error = get_token(scanner, &token);
+     CHECKERROR(error);
+     if(token->type == COMMA){
+        error = get_token(scanner, &token);
+        CHECKERROR(error);
+        if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+        }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+       }
+     }else if(token->type == RIGHT_PAR){
+        return SUCCESS;
+     }else{
+        return SYNTAX_ERROR;
+     }
+}
+
+error_t built_in_ord(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
+    bst_node *param_variable;
+    
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != Int && var->variable_type != Int_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "111");
+            }
+        }else{
+            var->variable_type = Int;
+            insert_variable_data(var, "111");
+        }
+    }
+
+    error = get_token(scanner, &token);
+     CHECKERROR(error);
+    
+    if(token->type == STRING){
+
+    }else if(token->type == IDENTIFIER){
+        param_variable = search_variable_in_all_scopes(stack, token->data);
+        if(param_variable == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->data == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->variable_type != String){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }
+    }else if (token->type == INT || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type == COMMA){
+       error = get_token(scanner, &token);
+       CHECKERROR(error);
+       if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+           return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+       }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else if(token->type == RIGHT_PAR){
+       return SUCCESS;
+    }else{
+       return SYNTAX_ERROR;
+    }
+}
+
+error_t built_in_chr(scanner_t *scanner, token_t *token, bst_node *var){
+    error_t error;
+    bst_node *param_variable;
+    
+    if(var != NULL){
+        if(var->variable_type != Not_specified){
+            if(var->variable_type != String_nil && var->variable_type != String){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                insert_variable_data(var, "simulation");
+            }
+        }else{
+            var->variable_type = String;
+            insert_variable_data(var, "simulation");
+        }
+    }
+
+    error = get_token(scanner, &token);
+     CHECKERROR(error);
+    
+    if(token->type == INT){
+
+    }else if(token->type == IDENTIFIER){
+        param_variable = search_variable_in_all_scopes(stack, token->data);
+        if(param_variable == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->data == NULL){
+            return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+        }
+        if(param_variable->variable_type != Int){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }
+    }else if (token->type == STRING || token->type == DOUBLE){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }else if(token->type == KEYWORD){
+        if(strcmp(token->data, "nil") == 0){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else{
+        return SYNTAX_ERROR;
+    }
+
+    error = get_token(scanner, &token);
+    CHECKERROR(error);
+    if(token->type == COMMA){
+       error = get_token(scanner, &token);
+       CHECKERROR(error);
+       if(token->type == IDENTIFIER || token->type == STRING || token->type == INT || token->type == DOUBLE){
+           return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;           
+       }else if(token->type == KEYWORD){
+            if(strcmp(token->data, "nil") == 0){
+                return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            return SYNTAX_ERROR;
+        }
+    }else if(token->type == RIGHT_PAR){
+       return SUCCESS;
+    }else{
+       return SYNTAX_ERROR;
+    }
+}
 
 #endif

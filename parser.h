@@ -18,12 +18,22 @@ error_t parser_analyse(scanner_t *scanner, token_t *token);
 error_t parser_variable(scanner_t *scanner, token_t *t);
 error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify);
 error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_node *tree_node);
-error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, variable_type var_type);
+error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, bst_node *variable);
 
 error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name);
 
-error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, variable_type var_type);
+error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, bst_node *variable);
 bool is_it_built_in_function(char *func_name);
+error_t built_in_chr(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_Double2Int(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_Int2Double(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_lenght(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_ord(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_readDouble(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_readInt(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_readString(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_substring(scanner_t *scanner, token_t *token, bst_node *var);
+error_t built_in_write(scanner_t *scanner, token_t *token);
 
 error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass);
 bool push_or_compose(expression_s **expression_stack, int new_operator_priority);
