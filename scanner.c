@@ -226,12 +226,8 @@ error_t get_token(scanner_t *scanner, token_t **token)
                         scanner->state = S_INIT;
                         // *token = init_token(MULTILINE);
                         scanner->buffer_pos = 0;
-<<<<<<< HEAD
                         // return SUCCESS;
                     }
-=======
-                        return SUCCESS;
->>>>>>> parent of 10ac338 (strings)
                 }
             }
             else if (next_char == '/')
@@ -276,15 +272,10 @@ error_t get_token(scanner_t *scanner, token_t **token)
                 else
                 {
                     scanner->state = S_INIT;
-<<<<<<< HEAD
                     *token =
                         init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
                     scanner->buffer_pos = 0;
                     scanner->rewind = next_char;
-=======
-                    *token = init_token_data(STRING, scanner->buffer, scanner->buffer_pos);
-                    scanner->buffer_pos = 0;                
->>>>>>> parent of 10ac338 (strings)
                     return SUCCESS;
                 }
             }
