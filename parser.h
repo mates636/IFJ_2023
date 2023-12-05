@@ -12,16 +12,20 @@
 void init_parser();
 void free_parser();
 
-error_t run_parser(scanner_t *scanner);
+error_t run_parser(scanner_t *scanner, token_t *token);
 error_t parser_analyse(scanner_t *scanner, token_t *token);
 
 
 error_t parser_variable(scanner_t *scanner, token_t *t);
     error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_modify);
     error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_node *tree_node);
+    error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, variable_type var_type);
 
 error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name);
 
+error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, variable_type var_type);
+    bool is_it_built_in_function(char *func_name);
+    
 error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass);
     bool push_or_compose(expression_s **expression_stack, int new_operator_priority);
     error_t expression_compose(expression_s **expression_stack, variable_type *expression_type);
