@@ -81,7 +81,7 @@ void init_parser(){
 error_t free_parser(){
         //cotrol for paranthesis
     if(p_stack->top != -1){
-        printf("paranth\n");
+        // printf("paranth\n");
         return SYNTAX_ERROR;
     }
 
@@ -131,7 +131,7 @@ error_t run_parser(scanner_t *scanner, token_t *token){
             error = parser_analyse(scanner, token); 
             
             if(error != SUCCESS){
-                printf("chyba %d \n", error);
+                // printf("chyba %d \n", error);
                 return error;
             }
     }
@@ -142,7 +142,7 @@ error_t run_parser(scanner_t *scanner, token_t *token){
         return error;
     }
 
-    printf("succes\n");
+    // printf("succes\n");
     return SUCCESS;
 }
 
@@ -920,9 +920,9 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             token_from_prev_fun = 1;
             tmp = token;
         }
-    printf("token_to_pass_type: %d\n", (*token_to_pass)->type);
-    printf("token_to_pass_data: %s\n", (*token_to_pass)->data);
-    printf("token_from_prev fun: %d\n", token_from_prev_fun);
+    // printf("token_to_pass_type: %d\n", (*token_to_pass)->type);
+    // printf("token_to_pass_data: %s\n", (*token_to_pass)->data);
+    // printf("token_from_prev fun: %d\n", token_from_prev_fun);
     }
  
     //processing expression
@@ -943,8 +943,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             }
         }
 
-        printf("token_type: %d\n", token->type);
-        printf("token_data: %s\n", token->data); 
+        // printf("token_type: %d\n", token->type);
+        // printf("token_data: %s\n", token->data); 
 
         ///////////////got (
         if((token->type == LEFT_PAR)){
@@ -1522,36 +1522,42 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
 // return expression
 error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
-    // sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
 
     //check if type of expression is same as function return_type
-    // variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
     variable_type type_of_variable;
     bool if_while_condition = false;
+
+    
     error = get_token(scanner, &token);
     CHECKERROR(error)
-    if(token->type == NEW_LINE || token->type == EOF_TYPE){
-        //todo
+    if(current_function->return_type != Void){
+        if(token->type == NEW_LINE || token->type == EOF_TYPE){
+            return SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE;
+        }
     }
+    
     token_t *tokentopass = (token_t*)malloc(sizeof(token_t));
     tokentopass->type = UNKNOWN;
     error = parser_expression(scanner, token, &type_of_variable, &if_while_condition, false, &tokentopass);
+    // if(error != SUCCESS){
+    //     if(current_function->return_type == Void && error == SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
+    //     }else{
+    //         return error;
+    //     }
+    // }
+    printf("%d\n", error);
     if(error != SUCCESS){
-        if(current_function->return_type == Void && error == SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
-        }else{
-            return error;
-        }
+        return error;
     }
+    // if(current_function->return_type == Void && error != SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
+    //     return SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE;
+    // }
 
-    if(current_function->return_type == Void && error != SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
-        return SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE;
-    }
-
-    printf("%d, %d\n", type_of_variable, current_function->return_type);
+    // printf("%d, %d\n", type_of_variable, current_function->return_type);
     if(current_function->return_type != Void){
-    if(type_of_variable != current_function->return_type){
-        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
-    }
+        if(type_of_variable != current_function->return_type){
+            return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+        }
     }
     
     return SUCCESS;
