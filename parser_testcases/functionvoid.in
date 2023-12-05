@@ -1,0 +1,5 @@
+func foo(a b : Int){
+    var c : Int
+    c = 5
+    return
+}

@@ -2,6 +2,7 @@ token type: 14
 token data: "func" 
 token type: 1 
 token data: "is_even" 
+token type: 8 
 token type: 1 
 token data: "a" 
 token type: 1 

@@ -3,4 +3,5 @@ token data: "a"
 token type: 19 
 token type: 10 
 token data: "ahoj" 
+token type: 36 
 token type: 11 

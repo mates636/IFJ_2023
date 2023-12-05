@@ -1,0 +1,5 @@
+func foo(a b : Int) -> String{
+    var c : Int 
+    c = 2
+    return c
+}

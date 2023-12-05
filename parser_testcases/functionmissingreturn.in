@@ -1,5 +1,5 @@
 func is_even (a i:Int) -> String {
         var c : String
         c = "sfd"
-        return c
+        return
 }

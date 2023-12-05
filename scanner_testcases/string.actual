@@ -1,9 +1,12 @@
 token type: 10 
 token data: "asd44s" 
+token type: 36 
 token type: 10 
 token data: "adsd\"" 
+token type: 36 
 token type: 10 
 token data: "s2\n" 
+token type: 36 
 token type: 10 
 token data: "sad\rasdf" 
 token type: 11 
