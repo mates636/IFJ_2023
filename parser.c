@@ -120,14 +120,13 @@ error_t run_parser(scanner_t *scanner, token_t *token){
                 }
                 return SUCCESS;
             }
-
+            
             //end of file for compilation or semantic error inside if/while/function body - missing }
             if(token->type == EOF_TYPE){
                 break;
             }
 
             //start of checking which expression i got
-            
             error = parser_analyse(scanner, token); 
             
             if(error != SUCCESS){
@@ -339,10 +338,12 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
         error = get_token(scanner, &token);
         CHECKERROR(error);  
         if(token->type == IDENTIFIER){
+            //got identifier
             size_t len = strlen(token->data) + 1;
             free(token_to_pass);
             token_to_pass = init_token_data(token->type, token->data, len);
-
+            
+            //left par for function
             error = get_token(scanner, &token);
             CHECKERROR(error);
             if(token->type == LEFT_PAR){
@@ -351,7 +352,6 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
                 return error;
             }
         }
-        
         //it was variable - calling expression
         error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, &token_to_pass);
         if(error != SUCCESS){
@@ -389,20 +389,20 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
             }
         }
         
-       ////////TO DO ONLY SIMULATION OF DATA TO VARIABLE
-            if((*type_of_variable) == String || (*type_of_variable) == String_nil){
+        //simulation of variable data value for controls
+            if(tree_node->variable_type == String || tree_node->variable_type == String_nil){
                 if((*type_of_variable) == Nil && tree_node->variable_type == String_nil){
                     insert_variable_data(tree_node, "nil");
                 }else{
                     insert_variable_data(tree_node, "simulation");
                 }
-            }else if((*type_of_variable) == Int || (*type_of_variable) == Int_nil){
+            }else if(tree_node->variable_type == Int || tree_node->variable_type == Int_nil){
                 if((*type_of_variable) == Nil && tree_node->variable_type == Int_nil){
                     insert_variable_data(tree_node, "nil");
                 }else{
                     insert_variable_data(tree_node, "111");
                 }
-            }else if((*type_of_variable) == Double || (*type_of_variable) == Double_nil){
+            }else if(tree_node->variable_type == Double || tree_node->variable_type == Double_nil){
                 if((*type_of_variable) == Nil && tree_node->variable_type == Double_nil){
                     insert_variable_data(tree_node, "nil");
                 }else{
@@ -410,6 +410,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
                 }
             }
         free(type_of_variable);
+        destroy_token(token_to_pass);
         
         if(error != SUCCESS){
             return error;
@@ -444,9 +445,33 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
     if(token->type != ASSIGMENT){
         return SYNTAX_ERROR;
     }
+
+    token_t *token_to_pass = (token_t*)malloc(sizeof(token_t));
+    token_to_pass->type = UNKNOWN;
     variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
+    (*type_of_variable) = Not_specified;
     bool if_while_condition = false;
-    error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
+
+    //is it function
+    error = get_token(scanner, &token);
+    CHECKERROR(error);  
+    if(token->type == IDENTIFIER){
+        //got identifier
+        size_t len = strlen(token->data) + 1;
+        free(token_to_pass);
+        token_to_pass = init_token_data(token->type, token->data, len);
+        
+        //left par for function
+        error = get_token(scanner, &token);
+        CHECKERROR(error);
+        if(token->type == LEFT_PAR){
+            error = parser_id_assignment_function(scanner, token, token_to_pass, variable->variable_type);
+            destroy_token(token_to_pass);
+            return error;
+        }
+    }
+    //it was variable - calling expression
+    error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, &token_to_pass);
     if(error != SUCCESS){
         return error;
     }
@@ -480,20 +505,20 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
             }
         }
     }
-   ////////TO DO ONLY SIMULATION OF DATA TO VARIABLE
-        if((*type_of_variable) == String || (*type_of_variable) == String_nil){
+        //simulation of variable data value for controls
+        if(variable->variable_type == String || variable->variable_type == String_nil){
             if((*type_of_variable) == Nil && variable->variable_type == String_nil){
                     insert_variable_data(variable, "nil");
                 }else{
                     insert_variable_data(variable, "simulation");
                 }
-        }else if((*type_of_variable) == Int || (*type_of_variable) == Int_nil){
+        }else if(variable->variable_type == Int || variable->variable_type == Int_nil){
             if((*type_of_variable) == Nil && variable->variable_type == Int_nil){
                     insert_variable_data(variable, "nil");
                 }else{
                     insert_variable_data(variable, "111");
                 }
-        }else if((*type_of_variable) == Double || (*type_of_variable) == Double_nil){
+        }else if(variable->variable_type == Double || variable->variable_type == Double_nil){
             if((*type_of_variable) == Nil && variable->variable_type == Double_nil){
                     insert_variable_data(variable, "nil");
                 }else{
@@ -1108,13 +1133,15 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 if(expression_stack->token_array[expression_stack->top]->type == IDENTIFIER){
                     variable = search_variable_in_all_scopes(stack, expression_stack->token_array[expression_stack->top]->data);
                     switch(variable->variable_type){
-                        /*CAREFULLY - OVERRIDING type IDENETIFIER ON OTHER TERM*/
                         case Int_nil:
                             expression_stack->token_array[expression_stack->top]->type = INT;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
                         case Double_nil:
                             expression_stack->token_array[expression_stack->top]->type = DOUBLE;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
                         case String_nil:
                             expression_stack->token_array[expression_stack->top]->type = STRING;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
                         default:
                             return SEMANTIC_ERROR_OTHERS;
                     }
@@ -1270,21 +1297,19 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                 }
                 if(variable->data == NULL){
-                   // printf("here\n");
                     return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
                 }
 
                 if(variable->node_data_type != VARIABLE_LET){
                     return SEMANTIC_ERROR_OTHERS;
                 }
-
+                
                 (*if_while_condition) = true;
                 (*token_to_pass) = token;
                 return SUCCESS;
             }
         }
     } 
-    
     //pop the expression stack
     while(true){
         error = expression_compose(&expression_stack, expression_type);
@@ -1885,7 +1910,7 @@ bool is_it_built_in_function(char *func_name){
 error_t parser_built_in_function(scanner_t *scanner, token_t *token, char *func_name, variable_type var_type){
 
     if(strcmp(func_name, "readString") == 0){
-
+        return SUCCESS;
     }else if(strcmp(func_name, "readInt") == 0){
 
     }else if(strcmp(func_name, "readDouble") == 0){
