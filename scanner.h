@@ -1,62 +1,63 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "error_code.h"
 
 #ifndef SCANNER_H
 #define SCANNER_H
 
-typedef enum token_type_t{
+typedef enum token_type_t
+{
     UNKNOWN,
     IDENTIFIER,
-    FUNC_IDENTRIFIER,//TODO
-    NIL,//TODO
+    FUNC_IDENTRIFIER, // TODO
+    NIL,              // TODO
     STRING_NIL,
     INT_NIL,
     DOUBLE_NIL,
-    SEMICOLON,  //;
-    LEFT_PAR,   //(
-    RIGHT_PAR,  //)
-    STRING,//
-    EOF_TYPE,//
-    INT,//
-    DOUBLE,//
-    KEYWORD,//
-    COLON,      //:
-    RIGHT_BR,   //{
-    LEFT_BR,    //}
-    EQUALS,     //==
-    ASSIGMENT,  //=
-    COMMA,      //,
-    PLUS,       //+
+    SEMICOLON, //;
+    LEFT_PAR,  //(
+    RIGHT_PAR, //)
+    STRING,    //
+    EOF_TYPE,  //
+    INT,       //
+    DOUBLE,    //
+    KEYWORD,   //
+    COLON,     //:
+    RIGHT_BR,  //{
+    LEFT_BR,   //}
+    EQUALS,    //==
+    ASSIGMENT, //=
+    COMMA,     //,
+    PLUS,      //+
     TWO_QUESTIONNAIRE,
-    MINUS,      //-
-    DIVIDE,     ///
-    MULTIPLY,   //*
-    LESS,       //<
-    NOT_EQUALS, //!=
-    LESS_EQUALS,//<=
-    MORE,       //>
-    MORE_EQUALS,//>=
-    RETURN_TYPE,//->
-    COMMENT,    // //
+    MINUS,       //-
+    DIVIDE,      ///
+    MULTIPLY,    //*
+    LESS,        //<
+    NOT_EQUALS,  //!=
+    LESS_EQUALS, //<=
+    MORE,        //>
+    MORE_EQUALS, //>=
+    RETURN_TYPE, //->
+    COMMENT,     // //
     MULTILINE,   // /**/
-    NIL_CONVERT,//??
-    EXCLAMATION,//!
-    NEW_LINE,   //\n
-    NO_TYPE     //_
-}token_type_t;
-
+    NIL_CONVERT, //??
+    EXCLAMATION, //!
+    NEW_LINE,    //\n
+    NO_TYPE      //_
+} token_type_t;
 
 typedef struct token_t
 {
     token_type_t type;
-    char* data;
-}token_t;
+    char *data;
+} token_t;
 
-typedef enum state_t{
+typedef enum state_t
+{
     S_INIT,
     S_IDENTIFIER,
     S_EQUAL,
@@ -80,10 +81,11 @@ typedef enum state_t{
     S_IDENTIFIERORKEYWORD,
     S_MULTI_STRING,
     S_MULTI_STRING2
-}state_t;
+} state_t;
 
-typedef struct scanner_t{
-    FILE* f_input;
+typedef struct scanner_t
+{
+    FILE *f_input;
     char buffer[10000];
     size_t buffer_pos;
     state_t state;
@@ -91,19 +93,19 @@ typedef struct scanner_t{
     char prev_char;
     char cur_char;
     int comm;
-}scanner_t;
+} scanner_t;
 
-error_t get_token(scanner_t* scanner,token_t** token);
+error_t get_token(scanner_t *scanner, token_t **token);
 
-token_t* init_token_data(token_type_t type, char* data, size_t data_len);
-token_t* init_token(token_type_t type);
+token_t *init_token_data(token_type_t type, char *data, size_t data_len);
+token_t *init_token(token_type_t type);
 
-void destroy_token(token_t* token);
-//void destroy_scanner()
+void destroy_token(token_t *token);
+// void destroy_scanner()
 
-scanner_t* init_scanner(FILE* f_input);
+scanner_t *init_scanner(FILE *f_input);
 
-char get_char(scanner_t* scanner);
+char get_char(scanner_t *scanner);
 
 int is_white(char next_char);
 
@@ -113,19 +115,19 @@ int is_digit(char next_char);
 
 int is_escape(char next_char);
 
-bool is_keyword(scanner_t* scanner);
+bool is_keyword(scanner_t *scanner);
 
-void add_char(char c, scanner_t* scanner);
+void add_char(char c, scanner_t *scanner);
 
-token_t* init_token_data(token_type_t type, char* data, size_t data_len);
-token_t* init_token(token_type_t type);
+token_t *init_token_data(token_type_t type, char *data, size_t data_len);
+token_t *init_token(token_type_t type);
 
-void destroy_token(token_t* token);
-//void destroy_scanner()
+void destroy_token(token_t *token);
+// void destroy_scanner()
 
-scanner_t* init_scanner(FILE* f_input);
+scanner_t *init_scanner(FILE *f_input);
 
-char get_char(scanner_t* scanner);
+char get_char(scanner_t *scanner);
 
 int is_white(char next_char);
 
@@ -133,6 +135,6 @@ int is_letter(char next_char);
 
 int is_digit(char next_char);
 
-void add_char(char c, scanner_t* scanner);
+void add_char(char c, scanner_t *scanner);
 
-#endif 
+#endif
