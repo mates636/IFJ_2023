@@ -12,6 +12,7 @@ scope_stack *stack;//symtable
 par_stack *p_stack;
 sym_t_function *fun_calls;
 int fun_calls_num;
+sym_t_function *current_function;
 
 void add_fun_call(sym_t_function *funcall){
     if(fun_calls_num == 0){
@@ -45,11 +46,39 @@ void dispose_funcalls(){
 //token for decision if i got next expression or not
 //token_t *next_token = NULL;
 
+// void init_builtin_function(){
+//     sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
+//     function->num_params = 0;
+//     function->id = string_copy("readString");
+//     function->return_type = String_nil;
+    
+//     bst_node *tree_node = stack->stack_array[0];
+//     insert_function(&tree_node, function->id, function);
+
+//     function = (sym_t_function*)malloc(sizeof(sym_t_function));
+//     function->num_params = 0;
+//     function->id = string_copy("readInt");
+//     function->return_type = Int_nil;
+    
+//     tree_node = stack->stack_array[0];
+//     insert_function(&tree_node, function->id, function);
+
+//     function = (sym_t_function*)malloc(sizeof(sym_t_function));
+//     function->num_params = 0;
+//     function->id = string_copy("readDouble");
+//     function->return_type = Double_nil;
+    
+//      tree_node = stack->stack_array[0];
+//     insert_function(&tree_node, function->id, function);
+// }
+
 void init_parser(){
     stack = scope_stack_init();
     p_stack = par_stack_init();
     fun_calls_num = 0;
     fun_calls = NULL;
+    current_function = NULL;
+   //init_builtin_function();
 }
 
 void free_parser(){
@@ -857,7 +886,10 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     bool want_VarOrLit = true;
     bool want_operator = false;
     bool at_least_one_operand = false;
-
+    bool is_return = false;
+    if((token->type == KEYWORD) && (strcmp(token->data, "return") == 0)){
+        is_return = true;
+    }
     //processing expression
     while(true){
 
@@ -865,7 +897,10 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             if(error != SUCCESS){
                 return error;
             }
-
+        if(is_return && ((token->type == NEW_LINE) || (token->type == EOF_TYPE))){
+            return SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE;
+        }
+        is_return = false;
         ///////////////got (
         if((token->type == LEFT_PAR)){
             if(!want_VarOrLit){
@@ -1188,6 +1223,8 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     return SUCCESS;   
 }
 
+
+
 // function -> func function_id (param_name param_id : param_type) -> return_type
 error_t parser_function(scanner_t *scanner, token_t *token){
     error_t error;
@@ -1232,7 +1269,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     bst_node *tree_node = stack->stack_array[0];
     insert_function(&tree_node, function->id, function);
     // //printf("inserted address %p\n", function);
-    bst_print(stack->stack_array[0]);
+    //bst_print(stack->stack_array[0]);
     // //printf("function id: %s\n", function->id);
     // //printf("stack top %d\n", stack->top);
     // //printf("tree node address %p\n", stack->stack_array[0]);
@@ -1241,6 +1278,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     // //printf("dfas\n");
     scope_stack_push(stack);
 
+    current_function = function;
     //SIMULATION - putting arguments into local tree for avaibility to using them in the function
     identifier = search_variable_in_all_scopes(stack, function->id);
     sym_t_function *fun = identifier->data;
@@ -1260,20 +1298,16 @@ error_t parser_function(scanner_t *scanner, token_t *token){
             insert_variable_data(identifier, "SIMULATION");
         }
     }
+    variable_type fun_return_type = function->return_type;
+
 
     error = run_parser(scanner);
+
     if(error != SUCCESS){
         return error;
     }
-    // error = get_token(scanner, &token);
-    // CHECKERROR(error)
-    // if(function->params->param_type != Void){
-    //     printf("%c\n", function->params->param_type);
-    //     if(token->data != "return"){
-    //         return SYNTAX_ERROR;
-    //     }
-    // }
 
+    current_function = NULL;
     scope_stack_pop(stack);
 
     return SUCCESS;
@@ -1403,22 +1437,31 @@ error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *s
 // return expression
 error_t parser_return(scanner_t *scanner, token_t *token){
     error_t error;
-    sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
-    
-    // error = get_token(scanner, &token);
-    // CHECKERROR(error)
+    // sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
 
     //check if type of expression is same as function return_type
-    variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
+    // variable_type *type_of_variable = (variable_type*)malloc(sizeof(variable_type));
+    variable_type type_of_variable;
     bool if_while_condition = false;
-    error = parser_expression(scanner, token, type_of_variable, &if_while_condition, false, NULL);
-    // printf("%d\n", error);
-    // printf("%d\n", function->return_type);
-    // printf("%d\n", *type_of_variable );
+    error = parser_expression(scanner, token, &type_of_variable, &if_while_condition, false, NULL);
     if(error != SUCCESS){
-        return error;
+        if(current_function->return_type == Void && error == SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
+        }else{
+            return error;
+        }
     }
 
+    if(current_function->return_type == Void && error != SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE){
+        return SEMANTIC_ERROR_CHYBEJICI_PREBYVAJICI_VYRAZ_V_PRIKAZU_NAVRATU_Z_FUNKCE;
+    }
+
+    printf("%d, %d\n", type_of_variable, current_function->return_type);
+    if(current_function->return_type != Void){
+    if(type_of_variable != current_function->return_type){
+        return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
+    }
+    }
+    
     return SUCCESS;
 }
 

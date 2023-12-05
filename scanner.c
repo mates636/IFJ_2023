@@ -178,9 +178,9 @@ error_t get_token(scanner_t* scanner,token_t** token){
                 next_char = get_char(scanner);
                 if(next_char == '\n' || next_char == '\0'){
                     scanner->state = S_INIT;
-                    *token = init_token(COMMENT);
+                    // *token = init_token(COMMENT);
                     scanner->buffer_pos = 0;
-                    return SUCCESS;
+                    // return SUCCESS;
                 }
                 break;
             case S_COMMENT3: //multiline
@@ -191,9 +191,9 @@ error_t get_token(scanner_t* scanner,token_t** token){
                         scanner->comm -= 1;
                         if(scanner->comm == 0){
                             scanner->state = S_INIT;
-                            *token = init_token(MULTILINE);
+                            // *token = init_token(MULTILINE);
                             scanner->buffer_pos = 0;
-                            return SUCCESS;
+                            // return SUCCESS;
                         }
                     }
                 }else if(next_char == '/'){

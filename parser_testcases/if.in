@@ -1,0 +1,12 @@
+let b : Int = 8
+let a : Int = 5
+let c : Int
+
+if(a > b){
+
+}else{
+    
+    c = 8
+}
+
+spatne??

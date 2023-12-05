@@ -1,5 +1,5 @@
-func foo(a b : String) -> String{
-    var c  : Int
-    c = 1
+func foo(a b : Int) -> Int{
+    var c : Int 
+    c = 2
     return c
 }

@@ -1,0 +1,5 @@
+func foo(a b : String)/*fdsafgd*/ -> Int{
+    var a : Int
+    a = 5
+    return a
+}
