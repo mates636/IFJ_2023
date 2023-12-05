@@ -1,3 +1,6 @@
-func a()
+func a(b c : Int) -> String{
+    var a : String = "dfs"
+    return a
+}
 
 
