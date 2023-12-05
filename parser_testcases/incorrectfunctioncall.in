@@ -1,5 +1,3 @@
-func sayHello(name: String) {
-    print("Hello, \(name)")
+func sayHello(name a: String) -> String{
+    sayHello(name: 1)
 }
-
-sayHello(name: "Alice")
