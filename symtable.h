@@ -112,6 +112,7 @@ error_t par_stack_pop(par_stack *par_stack);
 bool par_stack_is_empty(par_stack *par_stack);
 void par_stack_dispose(par_stack **par_stack);
 
+//stack for precedence analyse
 typedef struct expression_s
 {
     token_t *token_array[STACK_MAX_SIZE];
