@@ -1652,7 +1652,7 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
                                     return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                                 }
                                 if(id->node_data_type == FUNCTION){
-                                    //todo error
+                                    
                                     return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                                 }
                                 vartype = id->variable_type;
@@ -1669,7 +1669,6 @@ error_t parser_function_call(scanner_t *scanner, char* func_name, variable_type 
                             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                         }
                         if(id->node_data_type == FUNCTION){
-                            //todo error
                             return SEMANTIC_ERROR_SPATNY_POCET_TYP_PARAMETRU_U_VOLANI_FUNKCE_OR_SPATNY_TYP_NAVRATOVE_HODNOTY_Z_FUNKCE;
                         }
                         free(first_param_token);
