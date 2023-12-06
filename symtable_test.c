@@ -15,10 +15,36 @@ int main(){
         printf("bad\n");
     }
 
-    bst_insert(&(stack->stack_array[stack->top]), "ahoj", VARIABLE_LET);
-    printf("%s\n", stack->stack_array[stack->top]->key);
+    bst_insert(&(stack->stack_array[stack->top]), "g", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "b", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "u", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "d", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "e", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "f", VARIABLE_LET);
+    inorder_traversal(stack->stack_array[stack->top]);
 
-    bst_node *node = bst_search(stack->stack_array[stack->top], "ahoj");
+    scope_stack_push(stack);
+    bst_node *node = bst_search(stack->stack_array[stack->top], "g");
+    if(node == NULL){
+        printf("nic\n");
+
+    }else{
+        printf("nepushlo se\n");
+    }
+
+    bst_insert(&(stack->stack_array[stack->top]), "g", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "b", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "u", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "d", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "e", VARIABLE_LET);
+    bst_insert(&(stack->stack_array[stack->top]), "f", VARIABLE_LET);
+    inorder_traversal(stack->stack_array[stack->top]);
+
+    stack_dispose(&stack);
+    printf("mezera\n");
+    inorder_traversal(stack->stack_array[stack->top]);
+
+   /* bst_node *node = bst_search(stack->stack_array[stack->top], "ahoj");
     insert_variable_data(&node, "pepa");
 
     node = bst_search(stack->stack_array[stack->top], "ahoj");
@@ -56,7 +82,7 @@ int main(){
     }else{
         printf("%s\n", node->key);
     }
-
+*/
 
     return 0;
 }
