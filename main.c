@@ -21,5 +21,6 @@ int main(int argc, char **argv)
     }
     error = free_parser();
     fclose(source);
+    free(scanner);
     return error;
 }
