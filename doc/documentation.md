@@ -1,4 +1,3 @@
-
 ![](logofit.png)
 
 # Dokumentace
