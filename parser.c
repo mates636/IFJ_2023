@@ -6,7 +6,7 @@
 #define CHECKERROR(error) if ((error) != 0) return error; 
 
 scope_stack *stack; //symtable
-par_stack *p_stack;
+par_stack *p_stack; //paranthesis stack - (),{}
 sym_t_function *fun_calls;
 int fun_calls_num;
 sym_t_function *current_function;
@@ -40,48 +40,17 @@ void dispose_funcalls(){
     fun_calls_num = 0;
 }
 
-//token for decision if i got next expression or not
-//token_t *next_token = NULL;
-
-// void init_builtin_function(){
-//     sym_t_function *function = (sym_t_function*)malloc(sizeof(sym_t_function));
-//     function->num_params = 0;
-//     function->id = string_copy("readString");
-//     function->return_type = String_nil;
-    
-//     bst_node *tree_node = stack->stack_array[0];
-//     insert_function(&tree_node, function->id, function);
-
-//     function = (sym_t_function*)malloc(sizeof(sym_t_function));
-//     function->num_params = 0;
-//     function->id = string_copy("readInt");
-//     function->return_type = Int_nil;
-    
-//     tree_node = stack->stack_array[0];
-//     insert_function(&tree_node, function->id, function);
-
-//     function = (sym_t_function*)malloc(sizeof(sym_t_function));
-//     function->num_params = 0;
-//     function->id = string_copy("readDouble");
-//     function->return_type = Double_nil;
-    
-//      tree_node = stack->stack_array[0];
-//     insert_function(&tree_node, function->id, function);
-// }
-
 void init_parser(){
     stack = scope_stack_init();
     p_stack = par_stack_init();
     fun_calls_num = 0;
     fun_calls = NULL;
     current_function = NULL;
-   //init_builtin_function();
 }
 
 error_t free_parser(){
         //cotrol for paranthesis
     if(p_stack->top != -1){
-        // printf("paranth\n");
         return SYNTAX_ERROR;
     }
 
@@ -129,19 +98,15 @@ error_t run_parser(scanner_t *scanner, token_t *token){
             error = parser_analyse(scanner, token); 
 
             if(error != SUCCESS){
-                // printf("chyba %d \n", error);
                 return error;
             }
     }
 
-    //print_funcall();
     error = fun_calls_handler();
     if(error != SUCCESS){
-        // //printf("chyba funcall %d \n", error);
         return error;
     }
 
-    // printf("succes\n");
     return SUCCESS;
 }
 
@@ -174,18 +139,13 @@ error_t parser_analyse(scanner_t *scanner, token_t *token){
             return SUCCESS;
         case MULTILINE:
             return SUCCESS;
-        // case IDENTIFIER:
-        //     char* func_name = string_copy(token->data);
-            //todo free idk
         case EOF_TYPE:
             return SUCCESS;         
         case IDENTIFIER:
             func_name = string_copy(token->data);
-            //todo free
-            // error_t error;
-
             error = get_token(scanner, &token);
             CHECKERROR(error);
+
             if(token->type == LEFT_PAR){
                 if(is_it_built_in_function(func_name) == true){
                     return parser_built_in_function(scanner, token, func_name, NULL);
@@ -426,6 +386,7 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
     }
 }
 
+//id = function() - deciding if we have got built in or user function
 error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_t *function_id, bst_node *variable){
      if(is_it_built_in_function(function_id->data) == true){
         return parser_built_in_function(scanner, token, function_id->data, variable);
@@ -455,6 +416,7 @@ error_t parser_id_assignment_function(scanner_t *scanner, token_t *token, token_
     }
 }
 
+//defined or declared variable assignment
 error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var_name){    
     error_t error;
     bst_node *variable = search_variable_in_all_scopes(stack, var_name);
@@ -561,827 +523,6 @@ error_t parser_def_or_dec_variable(scanner_t *scanner, token_t *token, char *var
 
 ///////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////HELP FUNCTIONS - EXPRESSION////////////////////////
-error_t parser_expression_type_control_first_value(token_t *token, variable_type *type_control){
-    bst_node *id;
-    sym_t_variable *var; 
-    
-    switch(token->type){
-            case IDENTIFIER:
-                id = search_variable_in_all_scopes(stack, token->data);
-                var = id->data;
-                if(id == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }else{
-                    if(id->data == NULL){
-                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                    }
-                }
-                if(strcmp(var->data, "nil") == 0){
-                    (*type_control) = Nil;
-                }else{
-                    (*type_control) = id->variable_type;
-                }
-                return SUCCESS;
-            case KEYWORD:
-                if(strcmp(token->data, "nil") == 0){
-                    (*type_control) = Nil;
-                    return SUCCESS;
-                }else{
-                    return SYNTAX_ERROR;
-                }
-            case STRING:
-                (*type_control) = String;
-                return SUCCESS; 
-            case INT:
-                (*type_control) = Int;
-                return SUCCESS; 
-            case DOUBLE:
-                (*type_control) = Double;
-                return SUCCESS;
-            case DOUBLE_NIL:
-                (*type_control) = Double_nil;
-                return SUCCESS;
-            case INT_NIL:
-                (*type_control) = Int_nil;
-                return SUCCESS;
-            case STRING_NIL:
-                (*type_control) = String_nil;
-                return SUCCESS; 
-        }
-}
-
-//expression type control for arithmetic and string operations
-error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type *type_control){
-    bst_node *id;
-    
-    //first value in expression
-    if((*type_control) == Not_specified){
-        return parser_expression_type_control_first_value(token, type_control);
-    //other values in expression - checking types validity
-    }else{
-        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
-            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-        }
-
-        token_t *tmp = token;
-        if(tmp->type == IDENTIFIER){
-            id = search_variable_in_all_scopes(stack, token->data);
-            if(id == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }
-            if(id->variable_type == String){
-                tmp->type = STRING;
-            }else if(id->variable_type == Double){
-                tmp->type = DOUBLE;
-            }else if(id->variable_type == Int){
-                tmp->type = INT;
-            }else{
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }
-        }
-
-        switch(tmp->type){
-            case STRING:
-                if((*type_control) != String){
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-                break;
-            case DOUBLE:
-                if((*type_control) == Double || (*type_control) == Int){
-                    (*type_control) = Double;
-                }else{
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-                break;
-            case INT:
-                if((*type_control) == String){
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-                break;
-            default:
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                break;
-        }
-        return SUCCESS;
-    }
-}
-
-error_t parser_expression_type_control_rel_operators(token_t *token, variable_type *type_control, token_type_t type_token){
-    bst_node *id;
-    //first value in expression
-    if((*type_control) == Not_specified){
-        return parser_expression_type_control_first_value(token, type_control);
-    //other values in expression - checking types validity
-    }else{
-        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
-            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-        }
-
-        if(token->type == IDENTIFIER){
-            id = search_variable_in_all_scopes(stack, token->data);
-            if(id == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }else{
-                    if(id->data == NULL){
-                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                    }
-                }
-            if(id->variable_type != (*type_control)){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }else{
-                return SUCCESS;
-            }
-        }
-        if(type_token == EQUALS || type_token == NOT_EQUALS){
-            switch(token->type){
-                case STRING:
-                    if((*type_control) != String){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                case DOUBLE:
-                    if((*type_control) == Double || (*type_control) == Int){
-                        (*type_control) = Double;
-                    }else{
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                case INT:
-                    if((*type_control) == String){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                default:
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    break;
-            }
-            return SUCCESS;
-        }else{
-
-            switch(token->type){
-                case STRING:
-                    if((*type_control) != String){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                case DOUBLE:
-                    if((*type_control) != Double){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                case INT:
-                    if((*type_control) != Int){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }
-                    break;
-                default:
-                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    break;
-            }   
-            return SUCCESS;
-        }
-    }
-}
-
-error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token, variable_type *expression_type){
-     bst_node *variable;
-
-     if((*left_token)->type == IDENTIFIER){
-        //control of both sides of operator
-        variable_type right_side;
-        variable_type left_side;
-
-        //getting type of left side
-        variable = search_variable_in_all_scopes(stack, (*left_token)->data);
-        left_side = variable->variable_type;
-        //getting type of right side
-        if(right_token->type == IDENTIFIER){
-            variable = search_variable_in_all_scopes(stack, right_token->data);
-            if(variable->variable_type == String_nil || variable->variable_type == Int_nil || variable->variable_type == Double_nil){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }else{
-                right_side = variable->variable_type;
-            }
-        
-            //type compatibilty
-            if(left_side == Int_nil){
-                left_side = Int;
-            }else if(left_side == String_nil){
-                left_side = String;
-            }else if(left_side == Double_nil){
-                left_side = Double;
-            }else{
-                return SEMANTIC_ERROR_OTHERS;
-            }
-
-            if(left_side != right_side){
-
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }else{
-                switch(left_side){
-                    case Int:
-                        (*expression_type) = Int;
-                        break;
-                    case Double:
-                        (*expression_type) = Double;
-                        break;
-                    case String:
-                        (*expression_type) = String;
-                        break;
-                    default:
-                    SEMANTIC_ERROR_OTHERS;
-                }
-            }
-        }else{
-            switch(variable->variable_type){
-                case String_nil:
-                    if(right_token->type != STRING){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }else{
-                        (*expression_type) = String;
-                    }
-                    break;
-                case Int_nil:
-                    if(right_token->type != INT){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }else{
-                        (*expression_type) = Int;
-                    }
-                    break;
-                case Double_nil:
-                    if(right_token->type != DOUBLE && right_token->type != INT){
-                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                    }else{
-                        (*expression_type) = Double;
-                    }
-                    break;
-            }
-        }
-        return SUCCESS;
-    }else{
-        return SEMANTIC_ERROR_OTHERS;
-    }
-}
-
-error_t expression_compose(expression_s **expression_stack, variable_type *expression_type){
-    error_t error;    
-    token_t *operand;
-    token_t *operator;
-    bst_node *id;
-    token_type_t token_type;
-
-    operand = expression_stack_pop((*expression_stack));
-    if((*expression_stack)->top == -1){
-        switch(operand->type){
-            case IDENTIFIER:
-                id = search_variable_in_all_scopes(stack, operand->data);
-                (*expression_type) = id->variable_type;
-                (*expression_stack)->top = (*expression_stack)->top + 1;
-                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-                break;
-            case STRING:
-                (*expression_type) = String;
-                (*expression_stack)->top = (*expression_stack)->top + 1;
-                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-                break;
-            case INT:
-                (*expression_type) = Int;
-                (*expression_stack)->top = (*expression_stack)->top + 1;
-                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-                break;
-            case DOUBLE:
-                (*expression_type) = Double;
-                (*expression_stack)->top = (*expression_stack)->top + 1;
-                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-                break;
-            case KEYWORD:
-                (*expression_type) = Nil;
-                (*expression_stack)->top = (*expression_stack)->top + 1;
-                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-        }
-        return SUCCESS;
-    }
-    operator = expression_stack_pop((*expression_stack));
-
-    if(operator->type ==  PLUS|| operator->type ==  MINUS|| operator->type ==  MULTIPLY|| operator->type == DIVIDE){
-        error = parser_expression_type_control_arithmetic_strings(operand, expression_type);
-        if(error != SUCCESS){
-            return error;
-        }
-        if(operand->type == IDENTIFIER){
-            id = search_variable_in_all_scopes(stack, operand->data);
-            if(id->variable_type == String){
-                if(operator->type != PLUS){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-                }
-            }   
-        }else if(operand->type == STRING){
-            if(operator->type != PLUS){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }
-        }
-        destroy_token(operand);
-        destroy_token(operator);
-
-        operand = expression_stack_pop((*expression_stack));
-        error = parser_expression_type_control_arithmetic_strings(operand, expression_type);
-        if(error != SUCCESS){
-            return error;
-        }
-        switch((*expression_type)){
-            case Int:
-                operand->type = INT;
-                break;
-            case Double:
-                operand->type = DOUBLE;
-                break;
-            case String:
-                operand->type = STRING;
-                break;
-        }
-        (*expression_stack)->top = (*expression_stack)->top + 1;
-       (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-
-    }else if(operator->type == NIL_CONVERT){
-        token_t *old_operand = expression_stack_pop((*expression_stack));
-        error = parser_expression_nil_convert(&old_operand, operand, expression_type);
-        if(error != SUCCESS){
-            return error;
-        }
-
-        (*expression_stack)->top = (*expression_stack)->top + 1;
-        (*expression_stack)->token_array[(*expression_stack)->top] = old_operand;
-
-        destroy_token(operand);
-        destroy_token(operator);
-
-
-    }else{
-        token_type = operator->type;
-
-        error = parser_expression_type_control_rel_operators(operand, expression_type, token_type);
-        if(error != SUCCESS){
-            return error;
-        }
-        
-        destroy_token(operand);
-        destroy_token(operator);
-
-        operand = expression_stack_pop((*expression_stack));
-        error = parser_expression_type_control_rel_operators(operand, expression_type, token_type);
-        if(error != SUCCESS){
-            return error;
-        }
-        
-        (*expression_stack)->top = (*expression_stack)->top + 1;
-       (*expression_stack)->token_array[(*expression_stack)->top] = operand;
-    }
-    return SUCCESS;
-}
-
-//returns true if we want to compose
-bool push_or_compose(expression_s **expression_stack, int new_operator_priority){
-    int old_operator_priority;
-    if((*expression_stack)->top == 0){
-        return false;
-    }
-    token_t *token = (*expression_stack)->token_array[(*expression_stack)->top - 1];
-    if(token->type == MULTIPLY || token->type == DIVIDE){
-        old_operator_priority = 1;
-    }else if(token->type == PLUS || token->type == MINUS){
-        old_operator_priority = 2;
-    }else{
-        old_operator_priority = 3;
-    }
-
-    if(old_operator_priority <= new_operator_priority){
-        return true;
-    }else{
-        return false;
-    }
-}
-///////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////EXPRESSION////////////////////////////////////
-error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass){
-    error_t error;
-    bst_node *variable;
-    variable_type *expression_type;
-    variable_type *expression_type_par;
-    
-    //type for expression control
-    expression_type = (variable_type*)malloc(sizeof(variable_type));
-    expression_type_par = (variable_type*)malloc(sizeof(variable_type));
-    (*expression_type) = Not_specified;
-    (*expression_type_par) = Not_specified;
-    
-    //stack for precedence
-    expression_s *expression_stack = expression_stack_init();
-    int priority = 5;
-
-    //flags for decision what i need from token
-    bool want_VarOrLit = true;
-    bool want_operator = false;
-    bool at_least_one_operand = false;
-
-    //check if i got tokens from previous function
-    int token_from_prev_fun = 0;
-    token_t *tmp;
-    if(token_to_pass != NULL){
-        if((*token_to_pass)->type != UNKNOWN){
-            //got someting in token and token_to_pass from id = ..
-            token_from_prev_fun = 2;
-        }else{
-            //got something in token from if/while/return
-            token_from_prev_fun = 1;
-            tmp = token;
-        }
-    //printf("token_to_pass_type: %d\n", (*token_to_pass)->type);
-    //printf("token_to_pass_data: %s\n", (*token_to_pass)->data);
-    //printf("token_from_prev fun: %d\n", token_from_prev_fun);
-    }
- 
-    //processing expression
-    while(true){
-
-        if(token_from_prev_fun == 2){
-            tmp = token;
-            token = (*token_to_pass);
-            token_from_prev_fun = 1;
-        }else if(token_from_prev_fun == 1){
-            token = tmp;
-            token_from_prev_fun = 0;
-        }else{
-        //getting new tokens in expression
-            error = get_token(scanner, &token);
-            if(error != SUCCESS){
-                return error;
-            }
-        }
-
-        //printf("expression_token_type: %d\n", token->type);
-        //printf("expression_token_data: %s\n", token->data); 
-
-        ///////////////got (
-        if((token->type == LEFT_PAR)){
-            if(!want_VarOrLit){
-                return SYNTAX_ERROR;
-            }else{
-                at_least_one_operand = true;
-
-                par_stack_push(p_stack, '(');
-
-                error = parser_expression(scanner, token, expression_type_par, if_while_condition, false, NULL);
-                if(error != SUCCESS){
-                    return error;
-                }
-                //token simulating type of expression in paranthesis
-                token_type_t type_for_sim_token;
-                switch((*expression_type_par)){
-                        case Nil:
-                            type_for_sim_token = NIL;
-                            break;
-                        case String:
-                            type_for_sim_token = STRING;
-                            break;
-                        case String_nil:
-                            type_for_sim_token = STRING_NIL;
-                            break;
-                        case Int:
-                            type_for_sim_token = INT;
-                            break;
-                        case Int_nil:
-                            type_for_sim_token = INT_NIL;
-                            break;
-                        case Double:
-                            type_for_sim_token = DOUBLE;
-                            break;
-                        case Double_nil:
-                            type_for_sim_token = DOUBLE_NIL;
-                            break;
-                        case Void:
-                            continue;
-                    }
-                token_t *simulation = init_token(type_for_sim_token); 
-                expression_stack_push(expression_stack, simulation);
-                free(simulation);
-
-                want_VarOrLit = false;
-                want_operator = true;
-            }
-
-        ///////////////got * / 
-        }else if(token->type == MULTIPLY || token->type == DIVIDE){
-            
-            if(!want_operator){
-                return SYNTAX_ERROR;
-            }else{
-                if(priority <= 1){
-                    error = expression_compose(&expression_stack, expression_type);
-                    if(error != SUCCESS){
-                        return error;
-                    }
-                    while(true){
-                        bool push_comp = push_or_compose(&expression_stack, 1);
-                        if(push_comp){
-                            error = expression_compose(&expression_stack, expression_type);
-                            if(error != SUCCESS){
-                                return error;
-                            }
-                        }else{
-                            priority = 1;
-                            expression_stack_push(expression_stack, token);
-                            break;
-                        }
-                    }
-                }else{
-                    priority = 1;
-                    expression_stack_push(expression_stack, token);
-                }
-                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
-                want_VarOrLit = true;
-                want_operator = false; 
-            }
-        
-        ///////////////got + -
-        }else if(token->type == PLUS || token->type == MINUS){
-            if(!want_operator){
-                return SYNTAX_ERROR;
-            }else{
-                if(priority <= 2){
-                    error = expression_compose(&expression_stack, expression_type);
-                    if(error != SUCCESS){
-                        return error;
-                    }
-                    while(true){
-                        bool push_comp = push_or_compose(&expression_stack, 2);
-                        if(push_comp){
-                            error = expression_compose(&expression_stack, expression_type);
-                            if(error != SUCCESS){
-                                return error;
-                            }
-                        }else{
-                            priority = 2;
-                            expression_stack_push(expression_stack, token);
-                            break;
-                        }
-                    }
-                }else{
-                    priority = 2;
-                    expression_stack_push(expression_stack, token);
-                }
-                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
-                want_VarOrLit = true;
-                want_operator = false;
-            }
-        
-        ///////////////got == != < <= > >=
-        }else if(token->type == EQUALS || token->type == LESS || token->type == MORE ||
-                token->type == MORE_EQUALS || token->type == NOT_EQUALS || token->type == LESS_EQUALS){
-            if((*if_while_condition) == true){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }
-            if(!want_operator){
-                return SYNTAX_ERROR;
-            }else{
-                if(priority <= 3){
-                    error = expression_compose(&expression_stack, expression_type);
-                    if(error != SUCCESS){
-                        return error;
-                    }
-                    while(true){
-                        bool push_comp = push_or_compose(&expression_stack, 3);
-                        if(push_comp){
-                            error = expression_compose(&expression_stack, expression_type);
-                            if(error != SUCCESS){
-                                return error;
-                            }
-                        }else{
-                            priority = 3;
-                            expression_stack_push(expression_stack, token);
-                            break;
-                        }
-                    }
-                }else{
-                    priority = 3;
-                    expression_stack_push(expression_stack, token);
-                }
-
-                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
-                want_VarOrLit = true;
-                want_operator = false;
-                (*if_while_condition) = true;            
-            }
-
-        ///////////////got !
-        }else if(token->type == EXCLAMATION){
-            
-            if(!want_operator){
-                return SYNTAX_ERROR;
-            }else{
-                if(expression_stack->token_array[expression_stack->top]->type == IDENTIFIER){
-                    variable = search_variable_in_all_scopes(stack, expression_stack->token_array[expression_stack->top]->data);
-                    switch(variable->variable_type){
-                        case Int_nil:
-                            expression_stack->token_array[expression_stack->top]->type = INT;
-                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
-                            break;
-                        case Double_nil:
-                            expression_stack->token_array[expression_stack->top]->type = DOUBLE;
-                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
-                            break;
-                        case String_nil:
-                            expression_stack->token_array[expression_stack->top]->type = STRING;
-                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
-                            break;
-                        default:
-                            return SEMANTIC_ERROR_OTHERS;
-                    }
-                }else{
-                    return SYNTAX_ERROR;
-                }
-                want_VarOrLit = false;
-                want_operator = true;
-            }
-
-        ///////////////got ??
-        }else if(token->type == NIL_CONVERT){
-            if(expression_stack->top != 0){
-                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
-            }
-            if(!want_operator){
-                return SYNTAX_ERROR;
-            }else{
-                if(priority <= 4){
-                    error = expression_compose(&expression_stack, expression_type);
-                    if(error != SUCCESS){
-                        return error;
-                    }
-                    while(true){
-                        bool push_comp = push_or_compose(&expression_stack, 4);
-                        if(push_comp){
-                            error = expression_compose(&expression_stack, expression_type);
-                            if(error != SUCCESS){
-                                return error;
-                            }
-                        }else{
-                            priority = 4;
-                            expression_stack_push(expression_stack, token);
-                            break;
-                        }
-                    }
-                }else{
-                    priority = 4;
-                    expression_stack_push(expression_stack, token);
-                }
-               
-                want_VarOrLit = true;
-                want_operator = false;   
-            }
-
-        ///////////////got IDENTIFIER STRING INT DOUBLE
-        }else if(token->type == IDENTIFIER || token->type == STRING ||
-                token->type ==  INT || token->type == DOUBLE){
-                     
-            //control for assignment to variable
-            at_least_one_operand = true;
-            
-            if(!want_VarOrLit){
-                return SYNTAX_ERROR;
-            }else{
-                if(token->type == IDENTIFIER){
-                    variable = search_variable_in_all_scopes(stack, token->data);
-                    
-                    //variable exists?
-                    if(variable == NULL){
-                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                    }
-                    //variable is init ?
-                    if(variable->data == NULL){     
-                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                    }
-                }
-                
-                expression_stack_push(expression_stack, token);
-                //printf("%d\n", expression_stack->token_array[expression_stack->top]->type);    
-                want_VarOrLit = false;
-                want_operator = true;          
-            }
-         ///////////////got nil or let id syntax in if or while
-        }else if(token->type == KEYWORD){
-            at_least_one_operand = true;
-            if(!want_VarOrLit){
-                return SYNTAX_ERROR;
-            }else{
-                if(strcmp(token->data, "nil") == 0){
-                    expression_stack_push(expression_stack, token);
-                    want_VarOrLit = false;
-                    want_operator = true;
-                }else if(strcmp(token->data, "let") == 0){
-                    if(expression_stack->top == -1){
-                        (*expression_type) = Void;
-                        want_VarOrLit = false;
-                        want_operator = true;
-                        break;
-                    }else{
-                        return SYNTAX_ERROR;
-                    }  
-                }else{
-                    return SYNTAX_ERROR;
-                }
-                
-            }
-        }else if(token->type == LEFT_BR){
-            if(is_it_while_or_if == true){
-                if(at_least_one_operand == false){
-                    return SYNTAX_ERROR;
-                }
-                (*token_to_pass) = token;
-                want_VarOrLit = false;
-                want_operator = true;
-                break;
-            }else{
-                return SYNTAX_ERROR;
-            }
-        }else{
-            if(token->type == RIGHT_PAR || token->type == NEW_LINE || token->type == EOF_TYPE){
-                if(at_least_one_operand == false){
-                    return SYNTAX_ERROR;
-                }
-                if(token->type == RIGHT_PAR){
-                    if(p_stack->par_stack_array[p_stack->top] != '('){
-                        return SYNTAX_ERROR;
-                    }else{   
-                    error = par_stack_pop(p_stack);
-                    if(error != SUCCESS){
-                       return error;
-                    }
-                    want_VarOrLit = false;
-                    want_operator = true;
-                }
-            }
-                break;
-                
-            }else{
-                return SYNTAX_ERROR;
-            }
-        }
-    }//while
-    
-    if(want_VarOrLit == true){
-        return SYNTAX_ERROR;
-    }  
-
-    //syntax let in if or while statement 
-    if(token->type == KEYWORD){
-        if(strcmp(token->data, "let") == 0){
-            error = get_token(scanner, &token);
-            CHECKERROR(error);
-
-            if(token->type != IDENTIFIER){
-                return SYNTAX_ERROR;
-            }else{
-                variable = search_variable_in_all_scopes(stack, token->data);
-                if(variable == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }
-                if(variable->data == NULL){
-                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
-                }
-
-                if(variable->node_data_type != VARIABLE_LET){
-                    return SEMANTIC_ERROR_OTHERS;
-                }
-                
-                (*if_while_condition) = true;
-                (*token_to_pass) = token;
-                (*token_to_pass)->type = LET_IDENTIFIER;
-                return SUCCESS;
-            }
-        }
-    } 
-    //pop the expression stack
-    while(true){
-        error = expression_compose(&expression_stack, expression_type);
-        if(error != SUCCESS){
-            return error;
-        }
-        if(expression_stack->top == 0){
-            break;
-        }
-    } 
-
-    variable_type type_to_pass = (*expression_type);
-    if(control_type != NULL){
-        (*control_type) = type_to_pass;
-    }
-
-    expression_stack_dispose(&expression_stack);
-    free(expression_type);
-    free(expression_type_par);    
-    return SUCCESS;   
-}
 
 
 
@@ -1831,7 +972,7 @@ void print_funcall(){
 
 }
 
-
+//////////////////////////////IF/WHILE//////////////////////////////////////////////////////
 error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if_or_while){
     error_t error;
     bool if_while = false;
@@ -1977,8 +1118,10 @@ error_t parser_if_or_while_body(scanner_t *scanner, token_t *token){
 
     return SUCCESS;
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+////////////////////////////////////////built in functions/////////////////////////////////////////////////
 bool is_it_built_in_function(char *func_name){
     if( strcmp(func_name, "readString") == 0 ||
         strcmp(func_name, "readInt") == 0 ||
@@ -2653,5 +1796,847 @@ error_t built_in_chr(scanner_t *scanner, token_t *token, bst_node *var){
        return SYNTAX_ERROR;
     }
 }
+////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////HELP FUNCTIONS - EXPRESSION////////////////////////
+//we need to get type of expression - this is the first element in precedence stack
+error_t parser_expression_type_control_first_value(token_t *token, variable_type *type_control){
+    bst_node *id;
+    sym_t_variable *var; 
+    
+    switch(token->type){
+            case IDENTIFIER:
+                id = search_variable_in_all_scopes(stack, token->data);
+                var = id->data;
+                if(id == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }else{
+                    if(id->data == NULL){
+                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                    }
+                }
+                if(strcmp(var->data, "nil") == 0){
+                    (*type_control) = Nil;
+                }else{
+                    (*type_control) = id->variable_type;
+                }
+                return SUCCESS;
+            case KEYWORD:
+                if(strcmp(token->data, "nil") == 0){
+                    (*type_control) = Nil;
+                    return SUCCESS;
+                }else{
+                    return SYNTAX_ERROR;
+                }
+            case STRING:
+                (*type_control) = String;
+                return SUCCESS; 
+            case INT:
+                (*type_control) = Int;
+                return SUCCESS; 
+            case DOUBLE:
+                (*type_control) = Double;
+                return SUCCESS;
+            case DOUBLE_NIL:
+                (*type_control) = Double_nil;
+                return SUCCESS;
+            case INT_NIL:
+                (*type_control) = Int_nil;
+                return SUCCESS;
+            case STRING_NIL:
+                (*type_control) = String_nil;
+                return SUCCESS; 
+        }
+}
+
+//expression type control for arithmetic and string operations
+error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type *type_control){
+    bst_node *id;
+    
+    //first value in expression
+    if((*type_control) == Not_specified){
+        return parser_expression_type_control_first_value(token, type_control);
+    //other values in expression - checking types validity
+    }else{
+        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
+            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+        }
+
+        token_t *tmp = token;
+        if(tmp->type == IDENTIFIER){
+            id = search_variable_in_all_scopes(stack, token->data);
+            if(id == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+            if(id->variable_type == String){
+                tmp->type = STRING;
+            }else if(id->variable_type == Double){
+                tmp->type = DOUBLE;
+            }else if(id->variable_type == Int){
+                tmp->type = INT;
+            }else{
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }
+
+        switch(tmp->type){
+            case STRING:
+                if((*type_control) != String){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+            case DOUBLE:
+                if((*type_control) == Double || (*type_control) == Int){
+                    (*type_control) = Double;
+                }else{
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+            case INT:
+                if((*type_control) == String){
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+                break;
+            default:
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                break;
+        }
+        return SUCCESS;
+    }
+}
+
+error_t parser_expression_type_control_rel_operators(token_t *token, variable_type *type_control, token_type_t type_token){
+    bst_node *id;
+    //first value in expression
+    if((*type_control) == Not_specified){
+        return parser_expression_type_control_first_value(token, type_control);
+    //other values in expression - checking types validity
+    }else{
+        if((*type_control) == Nil || (*type_control) == Int_nil || (*type_control) == String_nil || (*type_control) == Double_nil){
+            return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+        }
+
+        if(token->type == IDENTIFIER){
+            id = search_variable_in_all_scopes(stack, token->data);
+            if(id == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }else{
+                    if(id->data == NULL){
+                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                    }
+                }
+            if(id->variable_type != (*type_control)){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                return SUCCESS;
+            }
+        }
+        //== and !=
+        if(type_token == EQUALS || type_token == NOT_EQUALS){
+            switch(token->type){
+                case STRING:
+                    if((*type_control) != String){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                case DOUBLE:
+                    if((*type_control) == Double || (*type_control) == Int){
+                        (*type_control) = Double;
+                    }else{
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                case INT:
+                    if((*type_control) == String){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                default:
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    break;
+            }
+            return SUCCESS;
+
+        //others rel operators
+        }else{
+
+            switch(token->type){
+                case STRING:
+                    if((*type_control) != String){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                case DOUBLE:
+                    if((*type_control) != Double){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                case INT:
+                    if((*type_control) != Int){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }
+                    break;
+                default:
+                    return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    break;
+            }   
+            return SUCCESS;
+        }
+    }
+}
+
+error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token, variable_type *expression_type){
+     bst_node *variable;
+
+     if((*left_token)->type == IDENTIFIER){
+        //control of both sides of operator
+        variable_type right_side;
+        variable_type left_side;
+
+        //getting type of left side
+        variable = search_variable_in_all_scopes(stack, (*left_token)->data);
+        left_side = variable->variable_type;
+        //getting type of right side
+        if(right_token->type == IDENTIFIER){
+            variable = search_variable_in_all_scopes(stack, right_token->data);
+            if(variable->variable_type == String_nil || variable->variable_type == Int_nil || variable->variable_type == Double_nil){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                right_side = variable->variable_type;
+            }
+        
+            //type compatibilty
+            if(left_side == Int_nil){
+                left_side = Int;
+            }else if(left_side == String_nil){
+                left_side = String;
+            }else if(left_side == Double_nil){
+                left_side = Double;
+            }else{
+                return SEMANTIC_ERROR_OTHERS;
+            }
+
+            if(left_side != right_side){
+
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
+                switch(left_side){
+                    case Int:
+                        (*expression_type) = Int;
+                        break;
+                    case Double:
+                        (*expression_type) = Double;
+                        break;
+                    case String:
+                        (*expression_type) = String;
+                        break;
+                    default:
+                    SEMANTIC_ERROR_OTHERS;
+                }
+            }
+        }else{
+            switch(variable->variable_type){
+                case String_nil:
+                    if(right_token->type != STRING){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = String;
+                    }
+                    break;
+                case Int_nil:
+                    if(right_token->type != INT){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = Int;
+                    }
+                    break;
+                case Double_nil:
+                    if(right_token->type != DOUBLE && right_token->type != INT){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = Double;
+                    }
+                    break;
+            }
+        }
+        return SUCCESS;
+    }else{
+        return SEMANTIC_ERROR_OTHERS;
+    }
+}
+
+
+//function for reducing precedence stack
+error_t expression_compose(expression_s **expression_stack, variable_type *expression_type){
+    error_t error;    
+    token_t *operand;
+    token_t *operator;
+    bst_node *id;
+    token_type_t token_type;
+
+    //if we have only one element on stack
+    operand = expression_stack_pop((*expression_stack));
+    if((*expression_stack)->top == -1){
+        switch(operand->type){
+            case IDENTIFIER:
+                id = search_variable_in_all_scopes(stack, operand->data);
+                (*expression_type) = id->variable_type;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+                break;
+            case STRING:
+                (*expression_type) = String;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+                break;
+            case INT:
+                (*expression_type) = Int;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+                break;
+            case DOUBLE:
+                (*expression_type) = Double;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+                break;
+            case KEYWORD:
+                (*expression_type) = Nil;
+                (*expression_stack)->top = (*expression_stack)->top + 1;
+                (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+        }
+        return SUCCESS;
+    }
+    operator = expression_stack_pop((*expression_stack));
+
+    //reducing - arithmetic operators
+    if(operator->type ==  PLUS|| operator->type ==  MINUS|| operator->type ==  MULTIPLY|| operator->type == DIVIDE){
+        //type control
+        error = parser_expression_type_control_arithmetic_strings(operand, expression_type);
+        if(error != SUCCESS){
+            return error;
+        }
+        if(operand->type == IDENTIFIER){
+            id = search_variable_in_all_scopes(stack, operand->data);
+            if(id->variable_type == String){
+                if(operator->type != PLUS){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                }
+            }   
+        }else if(operand->type == STRING){
+            if(operator->type != PLUS){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+        }
+        destroy_token(operand);
+        destroy_token(operator);
+
+        operand = expression_stack_pop((*expression_stack));
+        error = parser_expression_type_control_arithmetic_strings(operand, expression_type);
+        if(error != SUCCESS){
+            return error;
+        }
+        switch((*expression_type)){
+            case Int:
+                operand->type = INT;
+                break;
+            case Double:
+                operand->type = DOUBLE;
+                break;
+            case String:
+                operand->type = STRING;
+                break;
+        }
+        (*expression_stack)->top = (*expression_stack)->top + 1;
+       (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+
+    //reducing - nil convert
+    }else if(operator->type == NIL_CONVERT){
+        //type control - nil convert
+        token_t *old_operand = expression_stack_pop((*expression_stack));
+        error = parser_expression_nil_convert(&old_operand, operand, expression_type);
+        if(error != SUCCESS){
+            return error;
+        }
+
+        (*expression_stack)->top = (*expression_stack)->top + 1;
+        (*expression_stack)->token_array[(*expression_stack)->top] = old_operand;
+
+        destroy_token(operand);
+        destroy_token(operator);
+
+
+    //reducing rel operators
+    }else{
+        token_type = operator->type;
+
+        //type control rel operators
+        error = parser_expression_type_control_rel_operators(operand, expression_type, token_type);
+        if(error != SUCCESS){
+            return error;
+        }
+        
+        destroy_token(operand);
+        destroy_token(operator);
+
+        operand = expression_stack_pop((*expression_stack));
+        error = parser_expression_type_control_rel_operators(operand, expression_type, token_type);
+        if(error != SUCCESS){
+            return error;
+        }
+        
+        (*expression_stack)->top = (*expression_stack)->top + 1;
+       (*expression_stack)->token_array[(*expression_stack)->top] = operand;
+    }
+    return SUCCESS;
+}
+
+//returns true if we want to reduce compose stack
+bool push_or_compose(expression_s **expression_stack, int new_operator_priority){
+    int old_operator_priority;
+    if((*expression_stack)->top == 0){
+        return false;
+    }
+    token_t *token = (*expression_stack)->token_array[(*expression_stack)->top - 1];
+    if(token->type == MULTIPLY || token->type == DIVIDE){
+        old_operator_priority = 1;
+    }else if(token->type == PLUS || token->type == MINUS){
+        old_operator_priority = 2;
+    }else{
+        old_operator_priority = 3;
+    }
+
+    if(old_operator_priority <= new_operator_priority){
+        return true;
+    }else{
+        return false;
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////EXPRESSION//////////////////////////////////////////////////
+error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass){
+    error_t error;
+    bst_node *variable;
+    variable_type *expression_type;
+    variable_type *expression_type_par;
+    
+    //type for expression control
+    expression_type = (variable_type*)malloc(sizeof(variable_type));
+    expression_type_par = (variable_type*)malloc(sizeof(variable_type));
+    (*expression_type) = Not_specified;
+    (*expression_type_par) = Not_specified;
+    
+    //stack for precedence
+    expression_s *expression_stack = expression_stack_init();
+    int priority = 5;
+
+    //flags for decision what i need from token
+    bool want_VarOrLit = true;
+    bool want_operator = false;
+    bool at_least_one_operand = false;
+
+    //check if i got tokens from previous function
+    int token_from_prev_fun = 0;
+    token_t *tmp;
+    if(token_to_pass != NULL){
+        if((*token_to_pass)->type != UNKNOWN){
+            //got someting in token and token_to_pass from id = ..
+            token_from_prev_fun = 2;
+        }else{
+            //got something in token from if/while/return
+            token_from_prev_fun = 1;
+            tmp = token;
+        }
+    }
+ 
+    //processing expression
+    while(true){
+
+        if(token_from_prev_fun == 2){
+            tmp = token;
+            token = (*token_to_pass);
+            token_from_prev_fun = 1;
+        }else if(token_from_prev_fun == 1){
+            token = tmp;
+            token_from_prev_fun = 0;
+        }else{
+        //getting new tokens in expression
+            error = get_token(scanner, &token);
+            if(error != SUCCESS){
+                return error;
+            }
+        }
+
+
+        ///////////////got (
+        if((token->type == LEFT_PAR)){
+            if(!want_VarOrLit){
+                return SYNTAX_ERROR;
+            }else{
+                at_least_one_operand = true;
+
+                par_stack_push(p_stack, '(');
+
+                error = parser_expression(scanner, token, expression_type_par, if_while_condition, false, NULL);
+                if(error != SUCCESS){
+                    return error;
+                }
+                //token simulating type of expression in paranthesis
+                token_type_t type_for_sim_token;
+                switch((*expression_type_par)){
+                        case Nil:
+                            type_for_sim_token = NIL;
+                            break;
+                        case String:
+                            type_for_sim_token = STRING;
+                            break;
+                        case String_nil:
+                            type_for_sim_token = STRING_NIL;
+                            break;
+                        case Int:
+                            type_for_sim_token = INT;
+                            break;
+                        case Int_nil:
+                            type_for_sim_token = INT_NIL;
+                            break;
+                        case Double:
+                            type_for_sim_token = DOUBLE;
+                            break;
+                        case Double_nil:
+                            type_for_sim_token = DOUBLE_NIL;
+                            break;
+                        case Void:
+                            continue;
+                    }
+                token_t *simulation = init_token(type_for_sim_token); 
+                expression_stack_push(expression_stack, simulation);
+                free(simulation);
+
+                want_VarOrLit = false;
+                want_operator = true;
+            }
+
+        ///////////////got * / 
+        }else if(token->type == MULTIPLY || token->type == DIVIDE){
+            
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                //deciding if we want reduce od shift
+                if(priority <= 1){
+                    error = expression_compose(&expression_stack, expression_type);
+                    if(error != SUCCESS){
+                        return error;
+                    }
+                    while(true){
+                        bool push_comp = push_or_compose(&expression_stack, 1);
+                        if(push_comp){
+                            error = expression_compose(&expression_stack, expression_type);
+                            if(error != SUCCESS){
+                                return error;
+                            }
+                        }else{
+                            priority = 1;
+                            expression_stack_push(expression_stack, token);
+                            break;
+                        }
+                    }
+                }else{
+                    priority = 1;
+                    expression_stack_push(expression_stack, token);
+                }
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                want_VarOrLit = true;
+                want_operator = false; 
+            }
+        
+        ///////////////got + -
+        }else if(token->type == PLUS || token->type == MINUS){
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                //deciding if we want reduce od shift
+                if(priority <= 2){
+                    error = expression_compose(&expression_stack, expression_type);
+                    if(error != SUCCESS){
+                        return error;
+                    }
+                    while(true){
+                        bool push_comp = push_or_compose(&expression_stack, 2);
+                        if(push_comp){
+                            error = expression_compose(&expression_stack, expression_type);
+                            if(error != SUCCESS){
+                                return error;
+                            }
+                        }else{
+                            priority = 2;
+                            expression_stack_push(expression_stack, token);
+                            break;
+                        }
+                    }
+                }else{
+                    priority = 2;
+                    expression_stack_push(expression_stack, token);
+                }
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                want_VarOrLit = true;
+                want_operator = false;
+            }
+        
+        ///////////////got == != < <= > >=
+        }else if(token->type == EQUALS || token->type == LESS || token->type == MORE ||
+                token->type == MORE_EQUALS || token->type == NOT_EQUALS || token->type == LESS_EQUALS){
+            if((*if_while_condition) == true){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                //deciding if we want reduce od shift
+                if(priority <= 3){
+                    error = expression_compose(&expression_stack, expression_type);
+                    if(error != SUCCESS){
+                        return error;
+                    }
+                    while(true){
+                        bool push_comp = push_or_compose(&expression_stack, 3);
+                        if(push_comp){
+                            error = expression_compose(&expression_stack, expression_type);
+                            if(error != SUCCESS){
+                                return error;
+                            }
+                        }else{
+                            priority = 3;
+                            expression_stack_push(expression_stack, token);
+                            break;
+                        }
+                    }
+                }else{
+                    priority = 3;
+                    expression_stack_push(expression_stack, token);
+                }
+
+                //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
+                want_VarOrLit = true;
+                want_operator = false;
+                (*if_while_condition) = true;            
+            }
+
+        ///////////////got !
+        }else if(token->type == EXCLAMATION){
+            //transformation from nil type 
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                if(expression_stack->token_array[expression_stack->top]->type == IDENTIFIER){
+                    variable = search_variable_in_all_scopes(stack, expression_stack->token_array[expression_stack->top]->data);
+                    switch(variable->variable_type){
+                        case Int_nil:
+                            expression_stack->token_array[expression_stack->top]->type = INT;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
+                        case Double_nil:
+                            expression_stack->token_array[expression_stack->top]->type = DOUBLE;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
+                        case String_nil:
+                            expression_stack->token_array[expression_stack->top]->type = STRING;
+                            expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
+                        default:
+                            return SEMANTIC_ERROR_OTHERS;
+                    }
+                }else{
+                    return SYNTAX_ERROR;
+                }
+                want_VarOrLit = false;
+                want_operator = true;
+            }
+
+        ///////////////got ??
+        }else if(token->type == NIL_CONVERT){
+            if(expression_stack->top != 0){
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }
+            if(!want_operator){
+                return SYNTAX_ERROR;
+            }else{
+                //deciding if we want reduce od shift
+                if(priority <= 4){
+                    error = expression_compose(&expression_stack, expression_type);
+                    if(error != SUCCESS){
+                        return error;
+                    }
+                    while(true){
+                        bool push_comp = push_or_compose(&expression_stack, 4);
+                        if(push_comp){
+                            error = expression_compose(&expression_stack, expression_type);
+                            if(error != SUCCESS){
+                                return error;
+                            }
+                        }else{
+                            priority = 4;
+                            expression_stack_push(expression_stack, token);
+                            break;
+                        }
+                    }
+                }else{
+                    priority = 4;
+                    expression_stack_push(expression_stack, token);
+                }
+               
+                want_VarOrLit = true;
+                want_operator = false;   
+            }
+
+        ///////////////got IDENTIFIER STRING INT DOUBLE
+        }else if(token->type == IDENTIFIER || token->type == STRING ||
+                token->type ==  INT || token->type == DOUBLE){
+                     
+            //control for assignment to variable
+            at_least_one_operand = true;
+            
+            if(!want_VarOrLit){
+                return SYNTAX_ERROR;
+            }else{
+                if(token->type == IDENTIFIER){
+                    variable = search_variable_in_all_scopes(stack, token->data);
+                    
+                    //variable exists?
+                    if(variable == NULL){
+                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                    }
+                    //variable is init ?
+                    if(variable->data == NULL){     
+                        return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                    }
+                }
+                
+                expression_stack_push(expression_stack, token);
+                //printf("%d\n", expression_stack->token_array[expression_stack->top]->type);    
+                want_VarOrLit = false;
+                want_operator = true;          
+            }
+         ///////////////got nil or let id syntax in if or while
+        }else if(token->type == KEYWORD){
+            at_least_one_operand = true;
+            if(!want_VarOrLit){
+                return SYNTAX_ERROR;
+            }else{
+                //nil can be only in assignment to variable in some cases
+                if(strcmp(token->data, "nil") == 0){
+                    expression_stack_push(expression_stack, token);
+                    want_VarOrLit = false;
+                    want_operator = true;
+                }else if(strcmp(token->data, "let") == 0){
+                    if(expression_stack->top == -1){
+                        (*expression_type) = Void;
+                        want_VarOrLit = false;
+                        want_operator = true;
+                        break;
+                    }else{
+                        return SYNTAX_ERROR;
+                    }  
+                }else{
+                    return SYNTAX_ERROR;
+                }
+                
+            }
+        //we got { - if/while body - end case 
+        }else if(token->type == LEFT_BR){
+            if(is_it_while_or_if == true){
+                if(at_least_one_operand == false){
+                    return SYNTAX_ERROR;
+                }
+                (*token_to_pass) = token;
+                want_VarOrLit = false;
+                want_operator = true;
+                break;
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }else{
+            //end cases of expression
+            if(token->type == RIGHT_PAR || token->type == NEW_LINE || token->type == EOF_TYPE){
+                if(at_least_one_operand == false){
+                    return SYNTAX_ERROR;
+                }
+                if(token->type == RIGHT_PAR){
+                    if(p_stack->par_stack_array[p_stack->top] != '('){
+                        return SYNTAX_ERROR;
+                    }else{   
+                    error = par_stack_pop(p_stack);
+                    if(error != SUCCESS){
+                       return error;
+                    }
+                    want_VarOrLit = false;
+                    want_operator = true;
+                }
+            }
+                break;
+                
+            }else{
+                return SYNTAX_ERROR;
+            }
+        }
+    }//while
+    
+    //control if we didnt end with operator
+    if(want_VarOrLit == true){
+        return SYNTAX_ERROR;
+    }  
+
+    //syntax let in if or while statement 
+    if(token->type == KEYWORD){
+        if(strcmp(token->data, "let") == 0){
+            error = get_token(scanner, &token);
+            CHECKERROR(error);
+
+            if(token->type != IDENTIFIER){
+                return SYNTAX_ERROR;
+            }else{
+                variable = search_variable_in_all_scopes(stack, token->data);
+                if(variable == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+                if(variable->data == NULL){
+                    return SEMANTIC_ERROR_UNDEF_VAR_OR_NOT_INIT;
+                }
+
+                if(variable->node_data_type != VARIABLE_LET){
+                    return SEMANTIC_ERROR_OTHERS;
+                }
+                
+                (*if_while_condition) = true;
+                (*token_to_pass) = token;
+                (*token_to_pass)->type = LET_IDENTIFIER;
+                return SUCCESS;
+            }
+        }
+    } 
+    //reduce the expression stack
+    while(true){
+        error = expression_compose(&expression_stack, expression_type);
+        if(error != SUCCESS){
+            return error;
+        }
+        if(expression_stack->top == 0){
+            break;
+        }
+    } 
+
+    //passing type to variable or return from fun
+    variable_type type_to_pass = (*expression_type);
+    if(control_type != NULL){
+        (*control_type) = type_to_pass;
+    }
+
+    expression_stack_dispose(&expression_stack);
+    free(expression_type);
+    free(expression_type_par);    
+    return SUCCESS;   
+}
+////////////////////////////////////////////////////////////////////////
 
 #endif
