@@ -1,0 +1,7 @@
+func foo(a c : Int) -> String{
+        var a : String
+        a = """
+        sdfsd/u{11}/r
+        """
+        return a
+}

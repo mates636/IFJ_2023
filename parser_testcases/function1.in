@@ -1,5 +1,7 @@
-func foo(a c : Double) -> Int{
+foo(a : 2)
+
+func foo(a c : Int) -> Int{
     var t : Int = 3
-    foo(a : 2.3)
     return t
 }
+foo(a : "dsa")
