@@ -23,8 +23,8 @@ typedef enum token_type_t
     UNKNOWN,
     IDENTIFIER,
     LET_IDENTIFIER,
-    FUNC_IDENTRIFIER, // TODO
-    NIL,              // TODO
+    FUNC_IDENTRIFIER, 
+    NIL,              
     STRING_NIL,
     INT_NIL,
     DOUBLE_NIL,
@@ -112,7 +112,6 @@ token_t *init_token_data(token_type_t type, char *data, size_t data_len);
 token_t *init_token(token_type_t type);
 
 void destroy_token(token_t *token);
-// void destroy_scanner()
 
 scanner_t *init_scanner(FILE *f_input);
 
@@ -134,7 +133,6 @@ token_t *init_token_data(token_type_t type, char *data, size_t data_len);
 token_t *init_token(token_type_t type);
 
 void destroy_token(token_t *token);
-// void destroy_scanner()
 
 scanner_t *init_scanner(FILE *f_input);
 

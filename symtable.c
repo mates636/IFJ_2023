@@ -23,7 +23,6 @@ void inorder_traversal(bst_node *root) {
 
     if (root != NULL) {
         inorder_traversal(root->left_child);
-        printf("%s\n", root->key);
         inorder_traversal(root->right_child);
     }
     
@@ -153,7 +152,6 @@ bst_node *new_node(char *key, bst_node_data_type data_type) {
 //inserting nodes
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type) {
     if ((*tree) == NULL) {
-    //printf("%s\n", key);
 
         *tree = new_node(key, data_type);
         return;
@@ -208,7 +206,6 @@ void bst_print(bst_node *tree)
     else
     {
         bst_print(tree->left_child);
-        // printf("key: %s\n",tree->key);
         bst_print(tree->right_child);
     }
 }

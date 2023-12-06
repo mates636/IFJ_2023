@@ -23,18 +23,18 @@ scanner_t *init_scanner(FILE *f_input)
     return scanner;
 }
 
+
+//begin of FSM
 error_t get_token(scanner_t *scanner, token_t **token)
 {
     while (1)
     {
 
         char next_char;
-        // printf("state: %d \n", scanner->state);
         switch (scanner->state)
         {
         case S_INIT:
             next_char = get_char(scanner);
-            // printf("init got char %c\n", next_char);
             
             if (next_char == '\0')
             {
@@ -208,12 +208,11 @@ error_t get_token(scanner_t *scanner, token_t **token)
             if (next_char == '\n' || next_char == '\0')
             {
                 scanner->state = S_INIT;
-                // *token = init_token(COMMENT);
                 scanner->buffer_pos = 0;
-                // return SUCCESS;
             }
             break;
-        case S_COMMENT3: // multiline
+        // multiline comment
+        case S_COMMENT3:
 
             if (next_char == '*')
             {
@@ -224,9 +223,7 @@ error_t get_token(scanner_t *scanner, token_t **token)
                     if (scanner->comm == 0)
                     {
                         scanner->state = S_INIT;
-                        // *token = init_token(MULTILINE);
                         scanner->buffer_pos = 0;
-                        // return SUCCESS;
                     }
                 }
             }
@@ -404,7 +401,7 @@ error_t get_token(scanner_t *scanner, token_t **token)
                 return LEXICAL_ERROR;
             }
             break;
-        // pripad pro cisla
+        
         case S_INT:
             if (next_char == '0')
             {
@@ -700,13 +697,14 @@ token_t *init_token_data(token_type_t type, char *data, size_t data_len)
     return token;
 }
 
+//free token
 void destroy_token(token_t *token)
 {
     free(token->data);
     free(token);
 }
 
-
+// get character from input
 char get_char(scanner_t *scanner)
 {
     char c;
@@ -718,7 +716,6 @@ char get_char(scanner_t *scanner)
     }
 
     int n = fscanf(scanner->f_input, "%c", &c);
-    // printf("got char: %c in state %d\n", c, scanner->state);
     scanner->prev_char = scanner->cur_char;
     scanner->cur_char = c;
     if (n <= 0)
@@ -731,8 +728,10 @@ char get_char(scanner_t *scanner)
     }
 }
 
-char previous_char(scanner_t *scanner) { return scanner->prev_char; }
+char previous_char(scanner_t *scanner) { return scanner->prev_char; 
+}
 
+// function for whitespace
 int is_white(char next_char)
 {
     if ((next_char == ' ') || (next_char == '\t'))
@@ -745,6 +744,7 @@ int is_white(char next_char)
     }
 }
 
+//function for letters
 int is_letter(char next_char)
 {
     if ((next_char >= 'a' && next_char <= 'z') ||
@@ -758,6 +758,7 @@ int is_letter(char next_char)
     }
 }
 
+//function for numbers
 int is_digit(char next_char)
 {
     if (next_char >= '0' && next_char <= '9')
@@ -770,6 +771,7 @@ int is_digit(char next_char)
     }
 }
 
+//function for escape sequences
 int is_escape(char next_char)
 {
     if ((next_char == '\"') || (next_char == 'n') || (next_char == 'r') ||
@@ -783,6 +785,7 @@ int is_escape(char next_char)
     }
 }
 
+//check if token is keyword
 bool is_keyword(scanner_t *scanner)
 {
     char *keywords[] = {"Double", "Double?", "else", "func", "if",
@@ -794,13 +797,14 @@ bool is_keyword(scanner_t *scanner)
     for (int i = 0; i < keywords_number; i++)
     {
         if (strcmp(scanner->buffer, keywords[i]) == 0)
-        { //, scanner->buffer_pos
+        {
             return true;
         }
     }
     return false;
 }
 
+//add char into buffer
 void add_char(char c, scanner_t *scanner)
 {
     scanner->buffer[scanner->buffer_pos] = c;

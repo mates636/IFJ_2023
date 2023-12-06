@@ -58,8 +58,6 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
 error_t parser_return_type(scanner_t *scanner, token_t *token, sym_t_function *struktura);
 error_t parser_return(scanner_t *scanner, token_t *token);
 error_t parser_function_call(scanner_t *scanner, char *func_name, variable_type required_return_type);
-// error_t parser_function();
-// error_t parser_while_statement();
 error_t fun_calls_handler();
 void print_funcall();
 

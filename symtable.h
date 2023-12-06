@@ -28,6 +28,7 @@ typedef enum node_data_type
     FUNCTION_PARAM
 } bst_node_data_type;
 
+// variable types
 typedef enum variable_type
 {
     Not_specified,
@@ -88,6 +89,7 @@ typedef struct sym_t_variable
     char *data;
 } sym_t_variable;
 
+// struct for function parameter
 typedef struct sym_t_param
 {
     char *param_name;
@@ -95,6 +97,7 @@ typedef struct sym_t_param
     variable_type param_type;
 } sym_t_param;
 
+// struct for functions
 typedef struct sym_t_function
 {
     char *id;
