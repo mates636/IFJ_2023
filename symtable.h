@@ -42,6 +42,7 @@ typedef struct bst_node
     variable_type variable_type;
     struct bst_node *left_child;
     struct bst_node *right_child;
+    int height; 
 } bst_node;
 
 // stack for scope
@@ -54,6 +55,13 @@ typedef struct stack
 void bst_init(bst_node **tree);
 bst_node *bst_search(bst_node *tree, char *key);
 bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key);
+void inorder_traversal(bst_node *root);
+int max_height(int tree_node_height1, int tree_node_height2);
+int height(bst_node *tree_node);
+int get_height_difference(bst_node *tree_node);
+bst_node *rotate_tree_right(bst_node *tree_node);
+bst_node *rotate_tree_left(bst_node *tree_node);
+bst_node *rotate_tree_left(bst_node *tree_node);
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type);
 void bst_dispose(bst_node **tree);
 void bst_print(bst_node *tree);

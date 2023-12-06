@@ -10,8 +10,19 @@ void bst_init(bst_node **tree)
     bst_insert(tree, "~root", FUNCTION);
 }
 
+void inorder_traversal(bst_node *root) {
+
+    if (root != NULL) {
+        inorder_traversal(root->left_child);
+        printf("%s\n", root->key);
+        inorder_traversal(root->right_child);
+    }
+    
+}
+
 bst_node *bst_search(bst_node *tree, char *key)
 {
+    
     while (tree != NULL)
     {
         if (strcmp(key, tree->key) < 0)
@@ -32,23 +43,38 @@ bst_node *bst_search(bst_node *tree, char *key)
 
 bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key)
 {
-    bst_node *search;
+    bst_node *root;
     bst_node *my_node;
+    bst_node *tmp = NULL;
     int i = stack->top;
 
     while (i != -1)
     {
-        search = stack->stack_array[i];
-        my_node = bst_search(search, key);
+        root = stack->stack_array[i];
+        my_node = bst_search(root, key);
+
         if (my_node != NULL)
         {
+
+            if(my_node->data == NULL){
+                tmp = my_node;
+                i--;
+                continue;
+            }
             return my_node;
         }
         i--;
     }
-    return NULL;
+
+    if(tmp != NULL){
+
+        return tmp;
+    }else{
+        return NULL;
+    }
 }
 
+/*
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type)
 {
     bst_node *parent_node = NULL;
@@ -71,7 +97,6 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type)
     while (tmp != NULL)
     {
         parent_node = tmp;
-
         if (strcmp(key, tmp->key) < 0)
         {
             tmp = tmp->left_child;
@@ -104,13 +129,128 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type)
                 parent_node->right_child = new_node;
                 return;
             }
-        }
+             }
         else
         {
             return;
+         }
+    }
+}
+*/
+
+
+
+
+////////tree inserting and balancing functions
+int max_height(int tree_node_height1, int tree_node_height2) {
+    if(tree_node_height1 > tree_node_height2){
+        return tree_node_height1;
+    }else{
+        return tree_node_height2;
+    }
+}
+
+int height(bst_node *tree_node) {
+    if(tree_node == NULL){
+        return 0;
+    }else{
+        return tree_node->height;
+    }
+}
+
+int get_height_difference(bst_node *tree_node) {
+    if(tree_node == NULL){
+        return 0;
+    }else{
+        return height(tree_node->left_child) - height(tree_node->right_child);
+    }
+}
+
+bst_node *rotate_tree_right(bst_node *tree_node) {
+    bst_node *new_parent = tree_node->left_child;
+    bst_node *right_child_to_shift = new_parent->right_child;
+
+    new_parent->right_child = tree_node;
+    tree_node->left_child = right_child_to_shift;
+
+    tree_node->height = max_height(height(tree_node->left_child), height(tree_node->right_child)) + 1;
+    new_parent->height = max_height(height(new_parent->left_child), height(new_parent->right_child)) + 1;
+
+    return new_parent;
+}
+
+bst_node *rotate_tree_left(bst_node *tree_node) {
+    bst_node *new_parent = tree_node->right_child;
+    bst_node *left_child_to_shift = new_parent->left_child;
+
+    new_parent->left_child = tree_node;
+    tree_node->right_child = left_child_to_shift;
+
+    tree_node->height = max_height(height(tree_node->left_child), height(tree_node->right_child)) + 1;
+    new_parent->height = max_height(height(new_parent->left_child), height(new_parent->right_child)) + 1;
+
+    return new_parent;
+}
+
+bst_node *new_node(char *key, bst_node_data_type data_type) {
+    bst_node *new_node = malloc(sizeof(struct bst_node));
+    new_node->key = string_copy(key);
+    new_node->data = NULL;
+    new_node->variable_type = Not_specified;
+    new_node->node_data_type = data_type;
+    new_node->left_child = NULL;
+    new_node->right_child = NULL;
+    new_node->height = 1;
+    return new_node;
+}
+
+void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type) {
+    if ((*tree) == NULL) {
+    //printf("%s\n", key);
+
+        *tree = new_node(key, data_type);
+        return;
+    }
+    //going left
+    if (strcmp(key, (*tree)->key) < 0) {
+        bst_insert(&((*tree)->left_child), key, data_type);
+    
+    //going right
+    } else if (strcmp(key, (*tree)->key) > 0) {
+        bst_insert(&((*tree)->right_child), key, data_type);
+    
+    } else {
+        return;
+    }
+    
+    (*tree)->height = max_height(height((*tree)->left_child), height((*tree)->right_child)) + 1;
+
+    //need balance the tree
+    
+    int height_diff = get_height_difference(*tree);
+
+    if (height_diff > 1) {
+        if (strcmp(key, (*tree)->left_child->key) < 0) {
+            (*tree) = rotate_tree_right(*tree);
+        } else {
+            //need to put keys right
+            (*tree)->left_child = rotate_tree_left((*tree)->left_child);
+            (*tree) = rotate_tree_right(*tree);
+        }
+    }
+
+    if (height_diff < -1) {
+        if (strcmp(key, (*tree)->right_child->key) > 0) {
+            (*tree) = rotate_tree_left(*tree);
+        } else {
+            //need to put keys right
+            (*tree)->right_child = rotate_tree_right((*tree)->right_child);
+            (*tree) = rotate_tree_left(*tree);
         }
     }
 }
+////////////////////////////////////////////////////////////
+
 
 void bst_print(bst_node *tree)
 {
@@ -170,7 +310,7 @@ char *string_copy(char *src)
     return dst;
 }
 
-// stack functions
+// stack functions - each element of stack represents one local scope tree, starting from global
 scope_stack *scope_stack_init()
 {
     scope_stack *stack = (scope_stack *)malloc(sizeof(scope_stack));
@@ -188,6 +328,7 @@ void scope_stack_push(scope_stack *stack)
 
     bst_node *local_frame;
     bst_init(&local_frame);
+
     stack->stack_array[stack->top] = local_frame;
 }
 
