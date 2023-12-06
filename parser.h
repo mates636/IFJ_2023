@@ -1,3 +1,12 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                parser.h
+ *
+ *                  Authors: Mikuláš Uřídil(xuridi01), Martin Priessnitz (xpries01)
+ *           Purpose: Source file with implementation of parser
+ *
+ *                      Last change: 6.12.2023
+ *****************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,6 +17,7 @@
 
 #ifndef PARSER_H
 #define PARSER_H
+
 
 void init_parser();
 error_t free_parser();
@@ -38,7 +48,7 @@ error_t built_in_write(scanner_t *scanner, token_t *token);
 error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *control_type, bool *if_while_condition, bool is_it_while_or_if, token_t **token_to_pass);
 bool push_or_compose(expression_s **expression_stack, int new_operator_priority);
 error_t expression_compose(expression_s **expression_stack, variable_type *expression_type);
-error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token);
+error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token, variable_type *expression_type);
 error_t parser_expression_type_control_rel_operators(token_t *token, variable_type *type_control, token_type_t type_token);
 error_t parser_expression_type_control_arithmetic_strings(token_t *token, variable_type *type_control);
 error_t parser_expression_type_control_first_value(token_t *token, variable_type *type_control);

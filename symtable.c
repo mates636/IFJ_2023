@@ -1,9 +1,18 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                symtable.c
+ *
+ *                  Authors: Mikuláš Uřídil(xuridi01)
+ *           Purpose: Source file with implementation of symtable
+ *
+ *                      Last change: 6.12.2023
+ *****************************************************************************/
 #include "symtable.h"
 
 #ifndef SYMTABLE_C
 #define SYMTABLE_C
 
-// BST functions
+///////////////////////////////////// SYMTABLE functions
 void bst_init(bst_node **tree)
 {
     (*tree) = NULL;
@@ -74,72 +83,6 @@ bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key)
     }
 }
 
-/*
-void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type)
-{
-    bst_node *parent_node = NULL;
-    bst_node *tmp = (*tree);
-
-    if ((*tree) == NULL)
-    {
-        bst_node *new_node = (bst_node *)malloc(sizeof(struct bst_node));
-        new_node->key = string_copy(key);
-        // new_node->key = key;
-        new_node->data = NULL;
-        new_node->variable_type = Not_specified;
-        new_node->node_data_type = data_type;
-        new_node->left_child = NULL;
-        new_node->right_child = NULL;
-        (*tree) = new_node;
-        return;
-    }
-
-    while (tmp != NULL)
-    {
-        parent_node = tmp;
-        if (strcmp(key, tmp->key) < 0)
-        {
-            tmp = tmp->left_child;
-            if (tmp == NULL)
-            {
-                bst_node *new_node = malloc(sizeof(struct bst_node));
-                new_node->key = string_copy(key);
-                new_node->data = NULL;
-                new_node->variable_type = Not_specified;
-                new_node->node_data_type = data_type;
-                new_node->left_child = NULL;
-                new_node->right_child = NULL;
-                parent_node->left_child = new_node;
-                return;
-            }
-        }
-        else if (strcmp(key, tmp->key) > 0)
-        {
-            tmp = tmp->right_child;
-            if (tmp == NULL)
-            {
-                bst_node *new_node = malloc(sizeof(struct bst_node));
-                new_node->key = string_copy(key);
-                // new_node->key = key;
-                new_node->data = NULL;
-                new_node->variable_type = Not_specified;
-                new_node->node_data_type = data_type;
-                new_node->left_child = NULL;
-                new_node->right_child = NULL;
-                parent_node->right_child = new_node;
-                return;
-            }
-             }
-        else
-        {
-            return;
-         }
-    }
-}
-*/
-
-
-
 
 ////////tree inserting and balancing functions
 int max_height(int tree_node_height1, int tree_node_height2) {
@@ -166,6 +109,8 @@ int get_height_difference(bst_node *tree_node) {
     }
 }
 
+
+//rotations for tree balance
 bst_node *rotate_tree_right(bst_node *tree_node) {
     bst_node *new_parent = tree_node->left_child;
     bst_node *right_child_to_shift = new_parent->right_child;
@@ -192,6 +137,7 @@ bst_node *rotate_tree_left(bst_node *tree_node) {
     return new_parent;
 }
 
+//new node insert
 bst_node *new_node(char *key, bst_node_data_type data_type) {
     bst_node *new_node = malloc(sizeof(struct bst_node));
     new_node->key = string_copy(key);
@@ -204,6 +150,7 @@ bst_node *new_node(char *key, bst_node_data_type data_type) {
     return new_node;
 }
 
+//inserting nodes
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type) {
     if ((*tree) == NULL) {
     //printf("%s\n", key);
@@ -309,6 +256,7 @@ char *string_copy(char *src)
     strcpy(dst, src);
     return dst;
 }
+
 
 // stack functions - each element of stack represents one local scope tree, starting from global
 scope_stack *scope_stack_init()
@@ -436,8 +384,9 @@ void insert_function(bst_node **tree, char *key, sym_t_function *data, scope_sta
     bst_node *fun_node = bst_search(*tree, key);
     fun_node->data = (sym_t_function *)data;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// stack for paranthesis and brackets
+///////////////////// stack for paranthesis and brackets///////////////////////////////
 par_stack *par_stack_init()
 {
     par_stack *stack = (par_stack *)malloc(sizeof(par_stack));
@@ -476,7 +425,9 @@ void par_stack_dispose(par_stack **par_stack)
     (*par_stack)->top = 0;
     free((*par_stack));
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////functions for precedence analyse///////////////////////////////////////
 expression_s *expression_stack_init()
 {
     expression_s *stack = (expression_s *)malloc(sizeof(expression_s));
@@ -527,7 +478,10 @@ void expression_stack_dispose(expression_s **expression_stack)
 {
     free(*expression_stack);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////others//////////////////////////////////////////////////////////
 char *variable_type_to_str(variable_type t)
 {
     switch (t)
