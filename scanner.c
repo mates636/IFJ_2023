@@ -35,137 +35,137 @@ error_t get_token(scanner_t *scanner, token_t **token)
         case S_INIT:
             next_char = get_char(scanner);
             // printf("init got char %c\n", next_char);
-            // Konec
+            
             if (next_char == '\0')
             {
                 *token = init_token(EOF_TYPE);
                 return SUCCESS;
             }
-            // Mezera
+            
             if (is_white(next_char))
             {
                 scanner->state = S_INIT;
             }
-            // Konec řádku
+            
             else if (next_char == '\n')
             {
                 *token = init_token(NEW_LINE);
                 return SUCCESS;
             }
-            // Levá závorka "funkce"
+            
             else if (next_char == '{')
             {
                 *token = init_token(LEFT_BR);
                 return SUCCESS;
             }
-            // Pravá závorka "funkce"
+            
             else if (next_char == '}')
             {
                 *token = init_token(RIGHT_BR);
                 return SUCCESS;
             }
-            // Rovná se
+            
             else if (next_char == '=')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_EQUALS;
             }
-            // Čárka
+            
             else if (next_char == ',')
             {
                 *token = init_token(COMMA);
                 return SUCCESS;
             }
-            // Komentář
+            
             else if (next_char == '/')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_COMMENT;
             }
-            // Sčítání
+            
             else if (next_char == '+')
             {
                 *token = init_token(PLUS);
                 return SUCCESS;
             }
-            // Násobení
+            
             else if (next_char == '*')
             {
                 *token = init_token(MULTIPLY);
                 return SUCCESS;
             }
-            // Levá závorka
+            
             else if (next_char == '(')
             {
                 *token = init_token(LEFT_PAR);
                 return SUCCESS;
             }
-            // Pravá závorka
+            
             else if (next_char == ')')
             {
                 *token = init_token(RIGHT_PAR);
                 return SUCCESS;
             }
-            // Menší než
+            
             else if (next_char == '<')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_LESS;
             }
-            // Větší než
+            
             else if (next_char == '>')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_MORE;
             }
-            // Návratový typ
+            
             else if (next_char == '-')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_RETURN_TYPE;
             }
-            // Speciální typ nil
+            
             else if (next_char == '?')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_NIL_CONVERT;
             }
-            // přiřazovač dat typu
+            
             else if (next_char == ':')
             {
                 *token = init_token(COLON);
                 return SUCCESS;
             }
-            // nerovna se
+            
             else if (next_char == '!')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_NOTEQUALS;
             }
-            // písmeno
+            
             else if (is_letter(next_char))
             {
                 add_char(next_char, scanner);
                 scanner->state = S_IDENTIFIERORKEYWORD;
             }
-            // Podtržítko
+            
             else if (next_char == '_')
             {
                 add_char(next_char, scanner);
                 scanner->state = S_IDENTIFIERORKEYWORD;
             }
-            // číslo
+            
             else if (is_digit(next_char))
             {
                 add_char(next_char, scanner);
                 scanner->state = S_INT;
             }
-            // STRING
+            
             else if (next_char == '\"')
             {
                 scanner->state = S_STRING;
             }
-            // error
+            
             else
             {
                 *token = init_token(NIL_CONVERT);
