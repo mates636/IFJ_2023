@@ -101,7 +101,6 @@ error_t run_parser(scanner_t *scanner, token_t *token){
             if(error != SUCCESS){
                 return error;
             }
-
             //we were in if or while or func body
             if(token->type == RIGHT_BR){
                 
@@ -128,7 +127,7 @@ error_t run_parser(scanner_t *scanner, token_t *token){
 
             //start of checking which expression i got
             error = parser_analyse(scanner, token); 
-            
+
             if(error != SUCCESS){
                 // printf("chyba %d \n", error);
                 return error;
@@ -269,6 +268,7 @@ error_t parser_variable_identifier(scanner_t *scanner, token_t *token, bool can_
         //we can insert new node with key of the variable
         identifier = current_scope(stack);
         bst_insert(&identifier, token->data, node_data_type);
+        stack->stack_array[stack->top] = identifier;
         identifier = bst_search(identifier, token->data);
     }else{
         return SEMANTIC_ERROR_UNDEF_FUN_OR_REDEF_VAR;
@@ -287,7 +287,6 @@ error_t parser_variable_type_and_data(scanner_t *scanner, token_t *token, bst_no
     }
 
     bool valid_expression = false;
-
     //next is colon
     if(parser_colon(token) == SUCCESS){
         valid_expression = true;
@@ -1311,9 +1310,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     if(token->type == KEYWORD){
         if(strcmp(token->data, "let") == 0){
             error = get_token(scanner, &token);
-                if(error != SUCCESS){
-                    return error;
-                }
+            CHECKERROR(error);
 
             if(token->type != IDENTIFIER){
                 return SYNTAX_ERROR;
@@ -1332,6 +1329,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 
                 (*if_while_condition) = true;
                 (*token_to_pass) = token;
+                (*token_to_pass)->type = LET_IDENTIFIER;
                 return SUCCESS;
             }
         }
@@ -1425,6 +1423,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     for(int i = 0; i < fun->num_params; i++){
         char *param = fun->params[i].param_id;
         bst_insert(&scope_for_insert, param, FUNCTION_PARAM);
+        stack->stack_array[stack->top] = scope_for_insert;
         identifier = bst_search(scope_for_insert, param);
         identifier->variable_type = fun->params[i].param_type;
         if(identifier->variable_type == Int || identifier->variable_type == Int_nil){
@@ -1489,6 +1488,7 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
             return SEMANTIC_ERROR_OTHERS;
         }
         bst_insert(&arg_tree, token->data, FUNCTION);
+        stack->stack_array[stack->top] = arg_tree;
 
         struktura->params[struktura->num_params].param_id = malloc(strlen(token->data) + 1);
         strcpy(struktura->params->param_id, token->data);
@@ -1840,9 +1840,8 @@ error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if
         }
     }
     error = parser_expression(scanner, token, Not_specified, &if_while, true, &token_to_pass);
-    if(error != SUCCESS){
-        return error;
-    }
+    CHECKERROR(error);
+
     //there is no bool operator
     if(if_while == false){
         return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
@@ -1886,6 +1885,23 @@ error_t parser_if_or_while_statement(scanner_t *scanner, token_t *token, bool if
 
 error_t parser_if_or_while_body(scanner_t *scanner, token_t *token){
     error_t error;
+    bst_node *variable;
+    bool variable_type_changed = false;
+
+    //syntax let id - id cant be nil in this block
+    if(token->type == LET_IDENTIFIER){
+        variable = search_variable_in_all_scopes(stack, token->data);
+        if(variable->variable_type == String_nil){
+            variable_type_changed = true;
+            variable->variable_type = String;
+        }else if(variable->variable_type == Int_nil){
+            variable_type_changed = true;
+            variable->variable_type = Int;
+        }else if(variable->variable_type == Double_nil){
+            variable_type_changed = true;
+            variable->variable_type = Double;
+        }
+    }
 
     while(true){
         //left BR from expression
@@ -1921,6 +1937,21 @@ error_t parser_if_or_while_body(scanner_t *scanner, token_t *token){
      if(token->type == EOF_TYPE){
         return SYNTAX_ERROR;
     }
+
+    //syntax let id - if id type was changed, i need to put it back
+    if(variable_type_changed){
+        if(variable->variable_type == String){
+            variable_type_changed = true;
+            variable->variable_type = String_nil;
+        }else if(variable->variable_type == Int){
+            variable_type_changed = true;
+            variable->variable_type = Int_nil;
+        }else if(variable->variable_type == Double){
+            variable_type_changed = true;
+            variable->variable_type = Double_nil;
+        }
+    }
+
     return SUCCESS;
 }
 

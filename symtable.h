@@ -55,6 +55,7 @@ typedef struct stack
 void bst_init(bst_node **tree);
 bst_node *bst_search(bst_node *tree, char *key);
 bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key);
+void inorder_traversal(bst_node *root);
 int max_height(int tree_node_height1, int tree_node_height2);
 int height(bst_node *tree_node);
 int get_height_difference(bst_node *tree_node);

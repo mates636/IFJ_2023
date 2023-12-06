@@ -10,8 +10,19 @@ void bst_init(bst_node **tree)
     bst_insert(tree, "~root", FUNCTION);
 }
 
+void inorder_traversal(bst_node *root) {
+
+    if (root != NULL) {
+        inorder_traversal(root->left_child);
+        printf("%s\n", root->key);
+        inorder_traversal(root->right_child);
+    }
+    
+}
+
 bst_node *bst_search(bst_node *tree, char *key)
 {
+    
     while (tree != NULL)
     {
         if (strcmp(key, tree->key) < 0)
@@ -32,22 +43,102 @@ bst_node *bst_search(bst_node *tree, char *key)
 
 bst_node *search_variable_in_all_scopes(scope_stack *stack, char *key)
 {
-    bst_node *search;
+    bst_node *root;
     bst_node *my_node;
+    bst_node *tmp = NULL;
     int i = stack->top;
 
     while (i != -1)
     {
-        search = stack->stack_array[i];
-        my_node = bst_search(search, key);
+        root = stack->stack_array[i];
+        my_node = bst_search(root, key);
+
         if (my_node != NULL)
         {
+
+            if(my_node->data == NULL){
+                tmp = my_node;
+                i--;
+                continue;
+            }
             return my_node;
         }
         i--;
     }
-    return NULL;
+
+    if(tmp != NULL){
+
+        return tmp;
+    }else{
+        return NULL;
+    }
 }
+
+/*
+void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type)
+{
+    bst_node *parent_node = NULL;
+    bst_node *tmp = (*tree);
+
+    if ((*tree) == NULL)
+    {
+        bst_node *new_node = (bst_node *)malloc(sizeof(struct bst_node));
+        new_node->key = string_copy(key);
+        // new_node->key = key;
+        new_node->data = NULL;
+        new_node->variable_type = Not_specified;
+        new_node->node_data_type = data_type;
+        new_node->left_child = NULL;
+        new_node->right_child = NULL;
+        (*tree) = new_node;
+        return;
+    }
+
+    while (tmp != NULL)
+    {
+        parent_node = tmp;
+        if (strcmp(key, tmp->key) < 0)
+        {
+            tmp = tmp->left_child;
+            if (tmp == NULL)
+            {
+                bst_node *new_node = malloc(sizeof(struct bst_node));
+                new_node->key = string_copy(key);
+                new_node->data = NULL;
+                new_node->variable_type = Not_specified;
+                new_node->node_data_type = data_type;
+                new_node->left_child = NULL;
+                new_node->right_child = NULL;
+                parent_node->left_child = new_node;
+                return;
+            }
+        }
+        else if (strcmp(key, tmp->key) > 0)
+        {
+            tmp = tmp->right_child;
+            if (tmp == NULL)
+            {
+                bst_node *new_node = malloc(sizeof(struct bst_node));
+                new_node->key = string_copy(key);
+                // new_node->key = key;
+                new_node->data = NULL;
+                new_node->variable_type = Not_specified;
+                new_node->node_data_type = data_type;
+                new_node->left_child = NULL;
+                new_node->right_child = NULL;
+                parent_node->right_child = new_node;
+                return;
+            }
+             }
+        else
+        {
+            return;
+         }
+    }
+}
+*/
+
+
 
 
 ////////tree inserting and balancing functions
@@ -115,6 +206,8 @@ bst_node *new_node(char *key, bst_node_data_type data_type) {
 
 void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type) {
     if ((*tree) == NULL) {
+    //printf("%s\n", key);
+
         *tree = new_node(key, data_type);
         return;
     }
@@ -129,10 +222,11 @@ void bst_insert(bst_node **tree, char *key, bst_node_data_type data_type) {
     } else {
         return;
     }
-
+    
     (*tree)->height = max_height(height((*tree)->left_child), height((*tree)->right_child)) + 1;
 
     //need balance the tree
+    
     int height_diff = get_height_difference(*tree);
 
     if (height_diff > 1) {
@@ -234,6 +328,7 @@ void scope_stack_push(scope_stack *stack)
 
     bst_node *local_frame;
     bst_init(&local_frame);
+
     stack->stack_array[stack->top] = local_frame;
 }
 
