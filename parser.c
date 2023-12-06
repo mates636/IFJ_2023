@@ -1,4 +1,12 @@
-
+/******************************************************************************
+ *                                  IFJ23
+ *                                parser.c
+ *
+ *                  Authors: Mikuláš Uřídil(xuridi01), Martin Priessnitz (xpries01)
+ *           Purpose: Source file with implementation of parser
+ *
+ *                      Last change: 6.12.2023
+ *****************************************************************************/
 #include "parser.h"
 
 #ifndef PARSER_C

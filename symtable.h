@@ -1,3 +1,12 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                symtable.h
+ *
+ *                  Authors: Mikuláš Uřídil(xuridi01)
+ *           Purpose: Source file with implementation of symtable
+ *
+ *                      Last change: 6.12.2023
+ *****************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -1,3 +1,13 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                scanner.h
+ *
+ *                  Authors: Martin Priessnitz (xpries01)
+ *           Purpose: Source file with implementation of lexer (scanner)
+ *
+ *                      Last change: 12.11.2023
+ *****************************************************************************/
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

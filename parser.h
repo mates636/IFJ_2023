@@ -1,3 +1,12 @@
+/******************************************************************************
+ *                                  IFJ23
+ *                                parser.h
+ *
+ *                  Authors: Mikuláš Uřídil(xuridi01), Martin Priessnitz (xpries01)
+ *           Purpose: Source file with implementation of parser
+ *
+ *                      Last change: 6.12.2023
+ *****************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,6 +17,7 @@
 
 #ifndef PARSER_H
 #define PARSER_H
+
 
 void init_parser();
 error_t free_parser();
