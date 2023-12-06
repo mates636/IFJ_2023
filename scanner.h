@@ -12,6 +12,7 @@ typedef enum token_type_t
 {
     UNKNOWN,
     IDENTIFIER,
+    LET_IDENTIFIER,
     FUNC_IDENTRIFIER, // TODO
     NIL,              // TODO
     STRING_NIL,
