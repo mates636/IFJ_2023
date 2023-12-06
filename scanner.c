@@ -706,6 +706,7 @@ void destroy_token(token_t *token)
     free(token);
 }
 
+
 char get_char(scanner_t *scanner)
 {
     char c;

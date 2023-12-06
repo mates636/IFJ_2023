@@ -1,0 +1,3 @@
+let a : String
+a = "ahoj"
+a = "zdar"

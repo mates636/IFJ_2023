@@ -1,7 +1,6 @@
-let a : String
+var a : String
 a = "fas"
 
-
-    while (a > 0) {
-        a = a - 1
-    }
+while (a > 0) {
+    a = a - 1
+}
