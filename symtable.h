@@ -96,7 +96,7 @@ typedef struct sym_t_function
 
 void insert_variable_data(bst_node *tree, char *data);
 void insert_variable_type(bst_node *tree, char *data);
-void insert_function(bst_node **tree, char *key, sym_t_function *data);
+void insert_function(bst_node **tree, char *key, sym_t_function *data, scope_stack *stack);
 variable_type find_variable_type(char *data);
 
 // stack for paranthesis and brackets

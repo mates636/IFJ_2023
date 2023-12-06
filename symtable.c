@@ -429,9 +429,10 @@ variable_type find_variable_type(char *data)
     }
 }
 
-void insert_function(bst_node **tree, char *key, sym_t_function *data)
+void insert_function(bst_node **tree, char *key, sym_t_function *data, scope_stack *stack)
 {
     bst_insert(tree, key, FUNCTION);
+    stack->stack_array[stack->top] = (*tree);
     bst_node *fun_node = bst_search(*tree, key);
     fun_node->data = (sym_t_function *)data;
 }

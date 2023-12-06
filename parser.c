@@ -1402,7 +1402,7 @@ error_t parser_function(scanner_t *scanner, token_t *token){
     }
     // bst_node *tree_node = current_scope(stack);
     bst_node *tree_node = stack->stack_array[0];
-    insert_function(&tree_node, function->id, function);
+    insert_function(&tree_node, function->id, function, stack);
     // //printf("inserted address %p\n", function);
     //bst_print(stack->stack_array[0]);
     // //printf("function id: %s\n", function->id);
@@ -1488,7 +1488,6 @@ error_t parser_argument(scanner_t *scanner, token_t *token, sym_t_function *stru
             return SEMANTIC_ERROR_OTHERS;
         }
         bst_insert(&arg_tree, token->data, FUNCTION);
-        stack->stack_array[stack->top] = arg_tree;
 
         struktura->params[struktura->num_params].param_id = malloc(strlen(token->data) + 1);
         strcpy(struktura->params->param_id, token->data);
