@@ -669,7 +669,6 @@ error_t parser_expression_type_control_arithmetic_strings(token_t *token, variab
 
 error_t parser_expression_type_control_rel_operators(token_t *token, variable_type *type_control, token_type_t type_token){
     bst_node *id;
-    // printf("%d\n", (*type_control));
     //first value in expression
     if((*type_control) == Not_specified){
         return parser_expression_type_control_first_value(token, type_control);
@@ -695,7 +694,6 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
             }
         }
         if(type_token == EQUALS || type_token == NOT_EQUALS){
-            //printf("%dsdd\n", (*type_control));
             switch(token->type){
                 case STRING:
                     if((*type_control) != String){
@@ -746,7 +744,7 @@ error_t parser_expression_type_control_rel_operators(token_t *token, variable_ty
     }
 }
 
-error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token){
+error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token, variable_type *expression_type){
      bst_node *variable;
 
      if((*left_token)->type == IDENTIFIER){
@@ -757,49 +755,72 @@ error_t parser_expression_nil_convert(token_t **left_token, token_t *right_token
         //getting type of left side
         variable = search_variable_in_all_scopes(stack, (*left_token)->data);
         left_side = variable->variable_type;
-        
         //getting type of right side
-        if(right_token->type = IDENTIFIER){
+        if(right_token->type == IDENTIFIER){
             variable = search_variable_in_all_scopes(stack, right_token->data);
             if(variable->variable_type == String_nil || variable->variable_type == Int_nil || variable->variable_type == Double_nil){
-                return SEMANTIC_ERROR_OTHERS;
-            right_side = variable->variable_type;
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
             }else{
-                switch(right_token->type){
-                    case INT:
-                        right_side = Int;
-                    case DOUBLE:
-                        right_side = Double;
-                    case STRING:
-                        right_side = String;
-                    default:
-                        return SYNTAX_ERROR;
-                }
+                right_side = variable->variable_type;
             }
         
             //type compatibilty
-            if(left_side != right_side){
-                return SEMANTIC_ERROR_OTHERS;
+            if(left_side == Int_nil){
+                left_side = Int;
+            }else if(left_side == String_nil){
+                left_side = String;
+            }else if(left_side == Double_nil){
+                left_side = Double;
             }else{
-                /*CAREFULLY - OVERRIDING type IDENETIFIER ON OTHER TERM*/
+                return SEMANTIC_ERROR_OTHERS;
+            }
+
+            if(left_side != right_side){
+
+                return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+            }else{
                 switch(left_side){
-                    case Int_nil:
-                        (*left_token)->type = INT;
+                    case Int:
+                        (*expression_type) = Int;
                         break;
-                    case Double_nil:
-                        (*left_token)->type = DOUBLE;
+                    case Double:
+                        (*expression_type) = Double;
                         break;
-                    case String_nil:
-                        (*left_token)->type = STRING;
+                    case String:
+                        (*expression_type) = String;
                         break;
                     default:
                     SEMANTIC_ERROR_OTHERS;
                 }
             }
         }else{
-            return SYNTAX_ERROR;
+            switch(variable->variable_type){
+                case String_nil:
+                    if(right_token->type != STRING){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = String;
+                    }
+                    break;
+                case Int_nil:
+                    if(right_token->type != INT){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = Int;
+                    }
+                    break;
+                case Double_nil:
+                    if(right_token->type != DOUBLE && right_token->type != INT){
+                        return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
+                    }else{
+                        (*expression_type) = Double;
+                    }
+                    break;
+            }
         }
         return SUCCESS;
+    }else{
+        return SEMANTIC_ERROR_OTHERS;
     }
 }
 
@@ -884,13 +905,17 @@ error_t expression_compose(expression_s **expression_stack, variable_type *expre
 
     }else if(operator->type == NIL_CONVERT){
         token_t *old_operand = expression_stack_pop((*expression_stack));
-        parser_expression_nil_convert(&old_operand, operand);
+        error = parser_expression_nil_convert(&old_operand, operand, expression_type);
+        if(error != SUCCESS){
+            return error;
+        }
 
         (*expression_stack)->top = (*expression_stack)->top + 1;
         (*expression_stack)->token_array[(*expression_stack)->top] = old_operand;
 
         destroy_token(operand);
-        destroy_token(operator); 
+        destroy_token(operator);
+
 
     }else{
         token_type = operator->type;
@@ -1146,7 +1171,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 //printf("%s\n", expression_stack->token_array[expression_stack->top]->data);
                 want_VarOrLit = true;
                 want_operator = false;
-                (*if_while_condition) = true;
+                (*if_while_condition) = true;            
             }
 
         ///////////////got !
@@ -1161,12 +1186,15 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                         case Int_nil:
                             expression_stack->token_array[expression_stack->top]->type = INT;
                             expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
                         case Double_nil:
                             expression_stack->token_array[expression_stack->top]->type = DOUBLE;
                             expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
                         case String_nil:
                             expression_stack->token_array[expression_stack->top]->type = STRING;
                             expression_stack->token_array[expression_stack->top]->data = ((sym_t_variable*)variable->data)->data;
+                            break;
                         default:
                             return SEMANTIC_ERROR_OTHERS;
                     }
@@ -1182,7 +1210,6 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
             if(expression_stack->top != 0){
                 return SEMANTIC_ERROR_TYPE_COMP_AR_STR_REL;
             }
-            
             if(!want_operator){
                 return SYNTAX_ERROR;
             }else{
@@ -1210,7 +1237,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
                 }
                
                 want_VarOrLit = true;
-                want_operator = false;    
+                want_operator = false;   
             }
 
         ///////////////got IDENTIFIER STRING INT DOUBLE
@@ -1337,7 +1364,6 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
     //pop the expression stack
     while(true){
         error = expression_compose(&expression_stack, expression_type);
-
         if(error != SUCCESS){
             return error;
         }
@@ -1353,8 +1379,7 @@ error_t parser_expression(scanner_t *scanner, token_t *token, variable_type *con
 
     expression_stack_dispose(&expression_stack);
     free(expression_type);
-    free(expression_type_par);
-    
+    free(expression_type_par);    
     return SUCCESS;   
 }
 
